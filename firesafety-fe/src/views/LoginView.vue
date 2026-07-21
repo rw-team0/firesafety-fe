@@ -1,25 +1,38 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
+
+const router = useRouter()
+const route = useRoute()
+const auth = useAuthStore()
 
 const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
 const loading = ref(false)
+const sessionExpiredBanner = ref(false)
 
-function handleLogin() {
+onMounted(() => {
+  if (route.query.sessionExpired) sessionExpiredBanner.value = true // client.js가 여기로 보냄
+})
+
+async function handleLogin() {
   errorMessage.value = ''
-
   if (!email.value || !password.value) {
     errorMessage.value = '이메일과 비밀번호를 입력해주세요.'
     return
   }
-
-  // TODO: 다음 티켓에서 실제 API 연동(POST /api/auth/login) + Pinia 저장으로 교체
   loading.value = true
-  setTimeout(() => {
+  try {
+    await auth.login(email.value, password.value)
+    router.push('/dashboard')
+  } catch (e) {
+    // NFR-16: 계정 존재 여부와 무관하게 401은 항상 같은 문구
+    errorMessage.value = '아이디 또는 비밀번호가 일치하지 않습니다.'
+  } finally {
     loading.value = false
-    errorMessage.value = '아이디 또는 비밀번호가 일치하지 않습니다.' // NFR-15: 401 통일 메시지
-  }, 500)
+  }
 }
 </script>
 
@@ -31,7 +44,7 @@ function handleLogin() {
         <span>FireSafety 관제</span>
       </div>
       <p class="subtitle">전기화재 방지 스마트 진단/분석 모니터링</p>
-
+      <div v-if="sessionExpiredBanner" class="banner-warn">로그인이 필요합니다.</div>
       <div v-if="errorMessage" class="error-banner">{{ errorMessage }}</div>
 
       <label class="field-label">이메일</label>

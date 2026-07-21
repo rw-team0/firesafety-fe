@@ -3,6 +3,9 @@ import DefaultLayout from '../layouts/DefaultLayout.vue'
 import AuthLayout from '../layouts/AuthLayout.vue'
 import MobileLayout from '../layouts/MobileLayout.vue'
 import LoginView from '../views/LoginView.vue'
+import AccountListView from '@/views/AccountListView.vue'
+import AccountAddView from '@/views/AccountAddView.vue'
+import AccountEditView from '@/views/AccountEditView.vue'
 
 // ── 웹 라우트 ──────────────────────────────
 const webRoutes = {
@@ -19,9 +22,9 @@ const webRoutes = {
     { path: 'settings/panels', name: 'panel-register', component: PlaceholderView, meta: { requiredRole: 'ADMIN' } },
     { path: 'settings/circuits', name: 'circuit-register', component: PlaceholderView, meta: { requiredRole: 'ADMIN' } },
     { path: 'settings/site-assignment', name: 'site-assignment', component: PlaceholderView, meta: { requiredRole: 'ADMIN' } },
-    { path: 'settings/accounts', name: 'account-list', component: PlaceholderView, meta: { requiredRole: 'SUPER_ADMIN' } },
-    { path: 'settings/accounts/new', name: 'account-add', component: PlaceholderView, meta: { requiredRole: 'ADMIN' } },
-    { path: 'settings/accounts/:userId', name: 'account-edit', component: PlaceholderView, meta: { requiredRole: 'ADMIN' } },
+    { path: 'settings/accounts', name: 'account-list', component: AccountListView, meta: { requiredRole: 'SUPER_ADMIN' } },
+    { path: 'settings/accounts/new', name: 'account-add', component: AccountAddView, meta: { requiredRole: 'ADMIN' } },
+    { path: 'settings/accounts/:userId', name: 'account-edit', component: AccountEditView, meta: { requiredRole: 'ADMIN' } },
   ],
 }
 
