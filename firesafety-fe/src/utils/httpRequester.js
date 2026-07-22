@@ -20,7 +20,11 @@ httpRequester.interceptors.response.use(
 
     // RT까지 만료된 경우 (재발급 API 자체가 401) → 로그아웃 처리
     if (config.url === '/auth/reissue' && status === 401) {
-      // TODO: 로그인 화면으로 이동 처리
+      // auth.js가 이 파일을 import하므로 여기서 vue-router/store를 다시 import하면 순환참조가 생김
+      // → 세션 완전만료는 드문 케이스라 풀 리로드로 로그인 화면 이동 처리
+      sessionStorage.removeItem('user');
+      const loginPath = location.pathname.startsWith('/m') ? '/m/login' : '/login';
+      window.location.href = `${loginPath}?expired=1`;
       return Promise.reject(err);
     }
 

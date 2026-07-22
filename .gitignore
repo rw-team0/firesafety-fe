@@ -31,3 +31,6 @@ pnpm-debug.log*
 
 # TypeScript 캐시
 *.tsbuildinfo
+
+# Claude 관련 메모
+CLAUDE.md

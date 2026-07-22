@@ -1,4 +1,22 @@
 <script setup>
+import { ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
+
+const router = useRouter()
+const route = useRoute()
+const auth = useAuthStore()
+
+const email = ref('')
+const password = ref('')
+const errorMessage = ref('')
+const loading = ref(false)
+const sessionExpiredBanner = ref(false)
+
+onMounted(() => {
+  if (route.query.expired === '1') sessionExpiredBanner.value = true
+})
+
 async function handleLogin() {
   if (!email.value || !password.value) {
     errorMessage.value = 'ID 또는 PW를 입력해주세요.' // 이건 서버 호출 전 클라이언트 검증이라 그대로 유지
@@ -7,10 +25,11 @@ async function handleLogin() {
   loading.value = true
   try {
     await auth.login(email.value, password.value)
-    router.push('/dashboard')
+    router.push(route.path.startsWith('/m') ? '/m/dashboard' : '/dashboard')
   } catch (e) {
-    // 401 메시지("ID 또는 PW가 일치하지 않습니다")는 인터셉터가 이미 alert로 띄웠음
-    // 여기 catch는 "로딩 스피너를 꺼야 한다"는 이 화면만의 후처리를 위해서만 존재
+    // 인터셉터의 alert()는 그대로 유지(문서 표준, 재발급 로직으로 메시지가 덮어써질 수 있는 알려진 이슈 있음)
+    // 여기선 같은 메시지를 카드 안 인라인 배너(.error-banner)에도 띄워서 와이어프레임 형태를 맞춤
+    errorMessage.value = e.response?.data?.resultMessage ?? '로그인에 실패했습니다.'
   } finally {
     loading.value = false
   }

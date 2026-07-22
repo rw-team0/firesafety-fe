@@ -6,8 +6,10 @@ import LoginView from '../views/LoginView.vue'
 import AccountListView from '@/views/AccountListView.vue'
 import AccountAddView from '@/views/AccountAddView.vue'
 import AccountEditView from '@/views/AccountEditView.vue'
+import AccountHistoryView from '@/views/AccountHistoryView.vue'
 
 // ── 웹 라우트 ──────────────────────────────
+//여기에 각 프론트엔드 뷰 추가(경로, 이름, 컴포넌트, 권한)
 const webRoutes = {
   path: '/',
   component: DefaultLayout,
@@ -25,7 +27,7 @@ const webRoutes = {
     { path: 'settings/accounts', name: 'account-list', component: AccountListView, meta: { requiredRole: 'SUPER_ADMIN' } },
     { path: 'settings/accounts/new', name: 'account-add', component: AccountAddView, meta: { requiredRole: 'ADMIN' } },
     { path: 'settings/accounts/:userId', name: 'account-edit', component: AccountEditView, meta: { requiredRole: 'ADMIN' } },
-    { path: 'settings/accounts/history', name:'account-history', component: PlaceholderView, meta:{requiredRole:'SUPER_ADMIN'} },
+    { path: 'settings/accounts/history', name:'account-history', component: AccountHistoryView, meta:{requiredRole:'SUPER_ADMIN'} },
     { path: 'settings/sites/:siteId', name:'site-edit', component: PlaceholderView, meta:{requiredRole:'SUPER_ADMIN'} },
   ],
 }
