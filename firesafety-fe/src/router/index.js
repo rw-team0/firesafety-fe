@@ -23,8 +23,8 @@ router.beforeEach((to) => {
   if (!required) return true // 로그인 화면처럼 권한 필요 없는 라우트
 
   // TODO: Pinia auth store 붙이면 아래 mock 대신 실제 로그인 상태 참조
-  const isLoggedIn = true
-  const currentRole = 'GENERAL'
+  const isLoggedIn = true // 로그인 상태
+  const currentRole = 'SUPER_ADMIN' //권한
 
   if (!isLoggedIn) return to.path.startsWith('/m') ? '/m/login' : '/login'
   if (ROLE_RANK[currentRole] < ROLE_RANK[required]) return to.path.startsWith('/m') ? '/m/dashboard' : '/dashboard'

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import apiClient from '../api/client'
+import httpRequester from '../utils/httpRequester'
 import { useAuthStore } from '../stores/auth'
 
 const route = useRoute()
@@ -18,7 +18,7 @@ const errorMsg = ref('')
 const forbidden = computed(() => targetRole.value === 'ADMIN' && auth.role !== 'SUPER_ADMIN')
 
 async function load() {
-  const res = await apiClient.get('/api/users')
+  const res = await apiClient.get('/users')
   const u = res.data.resultData.find(x => String(x.userId) === String(userId))
   if (u) { form.value = { ...u }; targetRole.value = u.role }
   loading.value = false
@@ -28,7 +28,7 @@ onMounted(load)
 async function save() {
   if (forbidden.value) return
   try {
-    await apiClient.put(`/api/users/${userId}`, form.value) // API-005
+    await apiClient.put(`/users/${userId}`, form.value) // API-005
     router.push('/settings/accounts')
   } catch (e) {
     errorMsg.value = e.response?.data?.resultMessage || '수정에 실패했습니다.'
@@ -37,7 +37,7 @@ async function save() {
 async function remove() {
   if (forbidden.value) return
   if (!confirm('정말 삭제하시겠습니까?')) return
-  await apiClient.delete(`/api/users/${userId}`) // API-006
+  await apiClient.delete(`/users/${userId}`) // API-006
   router.push('/settings/accounts')
 }
 </script>

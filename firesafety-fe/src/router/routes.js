@@ -25,6 +25,8 @@ const webRoutes = {
     { path: 'settings/accounts', name: 'account-list', component: AccountListView, meta: { requiredRole: 'SUPER_ADMIN' } },
     { path: 'settings/accounts/new', name: 'account-add', component: AccountAddView, meta: { requiredRole: 'ADMIN' } },
     { path: 'settings/accounts/:userId', name: 'account-edit', component: AccountEditView, meta: { requiredRole: 'ADMIN' } },
+    { path: 'settings/accounts/history', name:'account-history', component: PlaceholderView, meta:{requiredRole:'SUPER_ADMIN'} },
+    { path: 'settings/sites/:siteId', name:'site-edit', component: PlaceholderView, meta:{requiredRole:'SUPER_ADMIN'} },
   ],
 }
 

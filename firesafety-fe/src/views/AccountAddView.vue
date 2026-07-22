@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import apiClient from '../api/client'
+import httpRequester from '../utils/httpRequester'
 import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
@@ -15,7 +15,7 @@ const availableRoles = computed(() => auth.role === 'SUPER_ADMIN' ? ['ADMIN','GE
 async function submit() {
   errorMsg.value = ''
   try {
-    await apiClient.post('/api/users', form.value) // API-004
+    await apiClient.post('/users', form.value) // API-004
     router.push('/settings/accounts')
   } catch (e) {
     errorMsg.value = e.response?.data?.resultMessage === 'EMAIL_DUPLICATE'

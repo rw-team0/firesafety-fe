@@ -1,26 +1,7 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
-
-const router = useRouter()
-const route = useRoute()
-const auth = useAuthStore()
-
-const email = ref('')
-const password = ref('')
-const errorMessage = ref('')
-const loading = ref(false)
-const sessionExpiredBanner = ref(false)
-
-onMounted(() => {
-  if (route.query.sessionExpired) sessionExpiredBanner.value = true // client.js가 여기로 보냄
-})
-
 async function handleLogin() {
-  errorMessage.value = ''
   if (!email.value || !password.value) {
-    errorMessage.value = '이메일과 비밀번호를 입력해주세요.'
+    errorMessage.value = 'ID 또는 PW를 입력해주세요.' // 이건 서버 호출 전 클라이언트 검증이라 그대로 유지
     return
   }
   loading.value = true
@@ -28,8 +9,8 @@ async function handleLogin() {
     await auth.login(email.value, password.value)
     router.push('/dashboard')
   } catch (e) {
-    // NFR-16: 계정 존재 여부와 무관하게 401은 항상 같은 문구
-    errorMessage.value = '아이디 또는 비밀번호가 일치하지 않습니다.'
+    // 401 메시지("ID 또는 PW가 일치하지 않습니다")는 인터셉터가 이미 alert로 띄웠음
+    // 여기 catch는 "로딩 스피너를 꺼야 한다"는 이 화면만의 후처리를 위해서만 존재
   } finally {
     loading.value = false
   }
@@ -51,7 +32,7 @@ async function handleLogin() {
       <input
         v-model="email"
         type="email"
-        placeholder="you@company.com"
+        placeholder="you@email.com"
         class="field-input"
         @keyup.enter="handleLogin"
       />
@@ -68,7 +49,7 @@ async function handleLogin() {
       <button class="login-btn" :disabled="loading" @click="handleLogin">
         {{ loading ? '로그인 중...' : '로그인' }}
       </button>
-
+      <input type="checkbox">ID/PW 저장
       <p class="footnote">계정 발급은 상위 관리자에게 문의하세요 (자체가입 없음)</p>
     </div>
   </div>

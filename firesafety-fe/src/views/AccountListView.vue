@@ -1,46 +1,42 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import apiClient from '../api/client'
-
-const router = useRouter()
-const users = ref([])
-const loading = ref(true)
-const errorMsg = ref('')
-const ROLE_LABEL = { SUPER_ADMIN:'최고관리자', ADMIN:'관리자', GENERAL:'일반' }
+import httpRequester from '../utils/httpRequester'
 
 async function loadUsers() {
-  loading.value = true; errorMsg.value = ''
+  loading.value = true
+  const res = await httpRequester.get('/users', { params: showDeleted.value ? { status: 'DELETED' } : {} })
+  users.value = res.data.resultData
+  loading.value = false
+  // 실패 시 alert는 인터셉터가 처리 → 여기 try/catch 자체가 필요 없어짐
+}
+
+async function confirmBulkDelete() {
   try {
-    const res = await apiClient.get('/api/users') // API-003
-    users.value = res.data.resultData
+    await httpRequester.post('/users/bulk-delete', { userIds: selected.value })
+    // 성공했을 때만 할 일들 — try 블록에 있는 게 맞음
+    showDeleteConfirm.value = false
+    selected.value = []
+    loadUsers()
   } catch (e) {
-    errorMsg.value = '계정 목록을 불러오지 못했습니다.'
-  } finally {
-    loading.value = false
+    // 실패 메시지는 인터셉터가 이미 띄웠음. 팝업은 열어둔 채로 재시도할 수 있게 두는 것도 방법
+    // (예전처럼 여기서 또 alert('삭제에 실패했습니다') 부르면 중복 알림이 뜨니 지워야 함)
   }
 }
-onMounted(loadUsers)
-</script>
 
+async function restore(userId) {
+  await httpRequester.patch(`/users/${userId}/restore`)
+  loadUsers()
+}
+</script>
 <template>
-  <div>
-    <div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
-      <button @click="router.push('/settings/accounts/new')">+ 계정 추가</button>
-    </div>
-    <p v-if="loading">불러오는 중...</p>
-    <p v-else-if="errorMsg">{{ errorMsg }}</p>
-    <table v-else>
-      <thead><tr><th>이름</th><th>이메일</th><th>연락처</th><th>역할</th><th>담당현장</th><th>최근로그인</th><th></th></tr></thead>
-      <tbody>
-        <tr v-for="u in users" :key="u.userId" style="cursor:pointer;" @click="router.push(`/settings/accounts/${u.userId}`)">
-          <td>{{ u.name }}</td><td>{{ u.email }}</td><td>{{ u.phone }}</td>
-          <td>{{ ROLE_LABEL[u.role] }}</td>
-          <td>{{ u.siteNames?.join(', ') }}</td>
-          <td>{{ u.lastLoginAt }}</td>
-          <td>수정 ›</td>
-        </tr>
-      </tbody>
-    </table>
+  <div style="display:flex;gap:8px;margin-bottom:16px;">
+    <router-link to="/settings/accounts/history">관리 이력</router-link>
+    <button style="margin-left:auto;" @click="showDeleteConfirm = selected.length > 0"
+      :disabled="!selected.length">선택 계정 삭제</button>
+    <router-link to="/settings/accounts/new">+ 계정 추가</router-link>
   </div>
+  <!-- 테이블 각 행 <td><input type="checkbox" v-model="selected" :value="u.userId"></td> 추가 -->
+
+  <ConfirmModal v-if="showDeleteConfirm" title="계정 삭제 확인"
+    message="정말로 선택된 계정들을 삭제하시겠습니까?" danger
+    @confirm="deleteSelected" @cancel="showDeleteConfirm=false" />
 </template>
