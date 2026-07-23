@@ -28,7 +28,7 @@ function doLogout(){
       <span style="margin-left:auto;">미확인 알림 {{ monitoring.unreadAlertCount }}</span>
       <span>{{ auth.user?.name }} {{ auth.role }}</span>
     </header>
-    <main style="flex:1;overflow-y:auto;"><router-view /></main>
+    <main style="flex:1;overflow-y:auto;"><router-view :key="$route.fullPath" /></main>
     <nav style="display:flex;border-top:1px solid var(--color-border);flex:none;">
       <router-link
         v-for="t in tabs" :key="t.name" :to="t.path"
