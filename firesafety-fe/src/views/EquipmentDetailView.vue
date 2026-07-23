@@ -7,11 +7,14 @@ import { useAuthStore } from '../stores/auth'
 
 const route = useRoute()
 const auth = useAuthStore()
+const panelId = route.params.panelId // 고정값으로 한 번만 읽는다 — WS/폴링 콜백이 매번 route를 다시 읽으면
+// 다른 페이지로 이동한 뒤 뒤늦게 도착한 메시지가 그 시점의(이미 사라진) params를 읽어 /panels/undefined를 호출하게 됨
 const panel = ref(null)
 const siteName = ref('-')
 const loading = ref(true)
 let socket = null
 let pollTimer = null
+let active = true // 언마운트 후 뒤늦게 도착한 콜백이 API를 호출/상태를 갱신하지 않도록 막는 가드
 
 // 실제 백엔드 GET /api/panels/{panelId} (2026-07-24 확장) 기준: 최신 전류/전압/전력/도어/온습도/가스·불꽃
 // raw값과 회로별 상태(circuits), 최근 경보(recentAlerts)까지 한 번에 내려옴 — 회로별 status는
@@ -25,11 +28,12 @@ function circuitCardStyle(status) {
 }
 
 async function load() {
-  const panelId = route.params.panelId
+  if (!active) return
   const [panelRes, sitesRes] = await Promise.all([
     httpRequester.get(`/panels/${panelId}`),
     httpRequester.get('/sites'),
   ])
+  if (!active) return
   panel.value = panelRes.data.resultData
   siteName.value = sitesRes.data.resultData.find(s => s.siteId === panel.value.siteId)?.name ?? '-'
 }
@@ -61,6 +65,7 @@ onMounted(async () => {
   })
 })
 onBeforeUnmount(() => {
+  active = false
   socket?.deactivate()
   stopPolling()
 })
@@ -98,27 +103,27 @@ onBeforeUnmount(() => {
       <span><span style="color:var(--color-text-muted);">불꽃</span> {{ panel.fireThreshold ?? '-' }}</span>
     </div>
 
-    <div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap;">
-      <div class="card" style="padding:12px 16px;min-width:110px;">
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;">
+      <div class="card" style="padding:12px 14px;">
         <div style="font-size:12px;color:var(--color-text-muted);">전체전류</div>
         <div style="font-size:16px;font-weight:700;">{{ panel.totalCurrent != null ? panel.totalCurrent + 'A' : '-' }}</div>
       </div>
-      <div class="card" style="padding:12px 16px;min-width:110px;">
+      <div class="card" style="padding:12px 14px;">
         <div style="font-size:12px;color:var(--color-text-muted);">전압</div>
         <div style="font-size:16px;font-weight:700;">{{ panel.voltV != null ? panel.voltV + 'V' : '-' }}</div>
       </div>
-      <div class="card" style="padding:12px 16px;min-width:110px;">
+      <div class="card" style="padding:12px 14px;">
         <div style="font-size:12px;color:var(--color-text-muted);">전체전력</div>
         <div style="font-size:16px;font-weight:700;">{{ panel.totalPower != null ? panel.totalPower + 'W' : '-' }}</div>
       </div>
-      <div class="card" style="padding:12px 16px;min-width:110px;">
+      <div class="card" style="padding:12px 14px;">
         <div style="font-size:12px;color:var(--color-text-muted);">도어</div>
         <div style="font-size:16px;font-weight:700;">{{ panel.doorStatus == null ? '-' : (panel.doorStatus ? '열림' : '닫힘') }}</div>
       </div>
     </div>
 
     <h3>회로 목록</h3>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-bottom:24px;">
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;">
       <div v-for="c in panel.circuits" :key="c.circuitId" class="card" :style="{ padding: '12px 14px', ...circuitCardStyle(c.status) }">
         <div style="font-weight:700;">회로 {{ c.channelNo }}</div>
         <div style="font-size:15px;font-weight:700;">{{ c.currentA != null ? c.currentA + 'A' : '-' }}</div>
@@ -128,20 +133,20 @@ onBeforeUnmount(() => {
     </div>
 
     <h3>환경</h3>
-    <div style="display:flex;gap:12px;flex-wrap:wrap;">
-      <div class="card" style="padding:12px 16px;min-width:100px;">
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;">
+      <div class="card" style="padding:12px 14px;">
         <div style="font-size:12px;color:var(--color-text-muted);">온도</div>
         <div style="font-size:16px;font-weight:700;">{{ panel.temperature != null ? panel.temperature + '°C' : '-' }}</div>
       </div>
-      <div class="card" style="padding:12px 16px;min-width:100px;">
+      <div class="card" style="padding:12px 14px;">
         <div style="font-size:12px;color:var(--color-text-muted);">습도</div>
         <div style="font-size:16px;font-weight:700;">{{ panel.humidity != null ? panel.humidity + '%' : '-' }}</div>
       </div>
-      <div class="card" style="padding:12px 16px;min-width:100px;">
+      <div class="card" style="padding:12px 14px;">
         <div style="font-size:12px;color:var(--color-text-muted);">불꽃센서</div>
         <div style="font-size:16px;font-weight:700;">{{ panel.fireRaw ?? '-' }}</div>
       </div>
-      <div class="card" style="padding:12px 16px;min-width:100px;">
+      <div class="card" style="padding:12px 14px;">
         <div style="font-size:12px;color:var(--color-text-muted);">가스센서</div>
         <div style="font-size:16px;font-weight:700;">{{ panel.gasRaw ?? '-' }}</div>
       </div>
