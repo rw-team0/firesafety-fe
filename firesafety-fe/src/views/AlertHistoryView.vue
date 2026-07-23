@@ -84,6 +84,14 @@ const pageNumbers = computed(() => {
   return Array.from({ length: end - start }, (_, i) => start + i)
 })
 
+// 헤더 체크박스: 현재 페이지에 보이는 항목 기준으로 전체선택/해제
+const allSelected = computed({
+  get: () => filteredAlerts.value.length > 0 && filteredAlerts.value.every((a) => selected.value.includes(a.alertId)),
+  set: (checked) => {
+    selected.value = checked ? filteredAlerts.value.map((a) => a.alertId) : []
+  },
+})
+
 const filteredAlerts = computed(() => {
   if (!appliedKeyword.value) return alerts.value
   const kw = appliedKeyword.value.toLowerCase()
@@ -111,6 +119,7 @@ const pendingAction = ref(null) // { alertId, action: 'confirm' }
 const resolveNoteMode = ref(false) // 조치완료는 선택 메모(resolutionNote, Swagger 확인) 입력을 받아서 바로 처리
 const resolutionNote = ref('')
 const pendingExport = ref(null) // 'all' | 'selected' | null — 와이어프레임 기준 출력 전 확인 팝업
+const pendingBulkAction = ref(null) // 'confirm' | 'resolve' | null — 체크박스로 선택한 여러 건 일괄 처리
 
 async function load() {
   loading.value = true
@@ -215,7 +224,7 @@ onMounted(async () => {
     <table v-else style="width:100%;border-collapse:collapse;">
       <thead>
         <tr style="text-align:left;border-bottom:1px solid var(--color-border);">
-          <th v-if="canExport" style="padding:8px;"></th>
+          <th v-if="canExport" style="padding:8px;"><input type="checkbox" v-model="allSelected" /></th>
           <th style="padding:8px;">발생일시</th>
           <th style="padding:8px;">현장</th>
           <th style="padding:8px;">분전반</th>
