@@ -10,6 +10,9 @@ const appliedKeyword = ref('')
 const loading = ref(false)
 const selected = ref([])
 const showBulkDeleteConfirm = ref(false)
+const page = ref(0) // PanelListReq엔 page/size가 없어서(Swagger 확인) 클라이언트에서 페이지네이션
+const PAGE_SIZE = 13
+const PAGE_WINDOW = 10
 
 // PanelStatus enum(백엔드가이드 6절): NORMAL/CAUTION/RISK/OFFLINE 4단계
 const STATUS_LABEL = { NORMAL: '정상', CAUTION: '주의', RISK: '위험', OFFLINE: '오프라인' }
@@ -33,12 +36,14 @@ async function load() {
   const res = await httpRequester.get('/panels', { params }) // siteId/status만 지원(Swagger 확인)
   panels.value = res.data.resultData
   selected.value = []
+  page.value = 0
   loading.value = false
 }
 onMounted(load)
 
 function search() {
   appliedKeyword.value = keyword.value.trim()
+  page.value = 0
 }
 
 const filteredPanels = computed(() => {
@@ -49,9 +54,25 @@ const filteredPanels = computed(() => {
   )
 })
 
-const allSelected = computed(() => filteredPanels.value.length > 0 && selected.value.length === filteredPanels.value.length)
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredPanels.value.length / PAGE_SIZE)))
+const pageNumbers = computed(() => {
+  const start = Math.floor(page.value / PAGE_WINDOW) * PAGE_WINDOW
+  const end = Math.min(start + PAGE_WINDOW, totalPages.value)
+  return Array.from({ length: end - start }, (_, i) => start + i)
+})
+const pagedPanels = computed(() => filteredPanels.value.slice(page.value * PAGE_SIZE, (page.value + 1) * PAGE_SIZE))
+
+function goToPage(p) {
+  if (p < 0 || p >= totalPages.value) return
+  page.value = p
+}
+
+const allSelected = computed(() => pagedPanels.value.length > 0 && pagedPanels.value.every((p) => selected.value.includes(p.panelId)))
 function toggleSelectAll() {
-  selected.value = allSelected.value ? [] : filteredPanels.value.map((p) => p.panelId)
+  const pagedIds = pagedPanels.value.map((p) => p.panelId)
+  selected.value = allSelected.value
+    ? selected.value.filter((id) => !pagedIds.includes(id))
+    : [...new Set([...selected.value, ...pagedIds])]
 }
 async function confirmBulkDelete() {
   showBulkDeleteConfirm.value = false
@@ -94,7 +115,7 @@ async function confirmBulkDelete() {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="p in filteredPanels" :key="p.panelId" style="border-bottom:1px solid var(--color-border);">
+        <tr v-for="p in pagedPanels" :key="p.panelId" style="border-bottom:1px solid var(--color-border);">
           <td style="padding:8px;" @click.stop><input type="checkbox" v-model="selected" :value="p.panelId" /></td>
           <td style="padding:8px;">{{ p.mNo || '-' }}</td>
           <td style="padding:8px;">{{ p.name }}</td>
@@ -113,6 +134,21 @@ async function confirmBulkDelete() {
         </tr>
       </tbody>
     </table>
+
+    <p style="color:var(--color-text-muted);font-size:12px;margin:8px 0 0;">총 {{ filteredPanels.length }}건</p>
+    <div style="display:flex;justify-content:center;align-items:center;gap:4px;margin-top:10px;">
+      <button class="btn" :disabled="page === 0" @click="goToPage(0)">&laquo;</button>
+      <button class="btn" :disabled="page === 0" @click="goToPage(page - 1)">&lsaquo;</button>
+      <button
+        v-for="p in pageNumbers"
+        :key="p"
+        class="btn"
+        :style="p === page ? { background:'var(--color-accent)', color:'#fff' } : {}"
+        @click="goToPage(p)"
+      >{{ p + 1 }}</button>
+      <button class="btn" :disabled="page >= totalPages - 1" @click="goToPage(page + 1)">&rsaquo;</button>
+      <button class="btn" :disabled="page >= totalPages - 1" @click="goToPage(totalPages - 1)">&raquo;</button>
+    </div>
 
     <ConfirmModal v-if="showBulkDeleteConfirm" title="설비 삭제 확인"
       message="선택한 설비를 삭제하시겠습니까? 하위 회로도 함께 비활성화됩니다." danger
