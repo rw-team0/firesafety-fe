@@ -49,6 +49,10 @@ export const handlers = [
 
   // ── 회원관리 ──
   http.get('/api/users', () => ok(mockUsers.filter((u) => u.accountStatus === 'ACTIVE').map(stripPassword))),
+  http.get('/api/users/check-email', ({ request }) => {
+    const email = new URL(request.url).searchParams.get('email')
+    return ok({ duplicate: mockUsers.some((u) => u.email === email) })
+  }),
   http.post('/api/users', async ({ request }) => {
     const body = await request.json()
     if (mockUsers.some((u) => u.email === body.email)) return fail(400, '이미 사용 중인 이메일입니다')
