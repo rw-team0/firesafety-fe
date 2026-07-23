@@ -27,6 +27,18 @@ function circuitCardStyle(status) {
   return { background: STATUS_COLOR[status] ?? 'var(--color-offline)', color: status === 'CAUTION' ? '#000' : '#fff', borderColor: 'transparent' }
 }
 
+// 항목별 raw값 vs 서버 주의 임계값 직접 비교(프론트 계산). 백엔드의 "30초 지속" 공식 CAUTION 판정과는
+// 별개라 순간적으로 안 맞을 수 있음 — 그래도 각 카드에서 뭐가 임계치를 넘었는지 바로 보여주려고 추가함
+function thresholdCardStyle(value, threshold) {
+  if (value == null || threshold == null || Number(value) < Number(threshold)) return {}
+  return { background: 'var(--color-warning)', color: '#000', borderColor: 'transparent' }
+}
+
+function doorCardStyle(doorStatus) {
+  if (!doorStatus) return {}
+  return { background: 'var(--color-danger)', color: '#fff', borderColor: 'transparent' }
+}
+
 async function load() {
   if (!active) return
   const [panelRes, sitesRes] = await Promise.all([
@@ -82,7 +94,7 @@ onBeforeUnmount(() => {
       <span style="font-size:12px;color:var(--color-text-muted);">{{ panel.isOnline ? '통신 정상' : '통신두절' }} · 최근 통신 {{ panel.lastCommunicatedAt ?? '-' }}</span>
     </div>
 
-    <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;padding:8px 14px;border:1px solid var(--color-border);border-radius:8px;margin-bottom:20px;font-size:13px;">
+    <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;padding:8px 14px;border:1px solid var(--color-border);border-radius:8px;font-size:13px;">
       <span><span style="color:var(--color-text-muted);">소속 현장</span> {{ siteName }}</span>
       <span><span style="color:var(--color-text-muted);">일련번호</span> {{ panel.deviceSerial }}</span>
       <span><span style="color:var(--color-text-muted);">장비번호</span> {{ panel.mNo || '-' }}</span>
@@ -104,19 +116,19 @@ onBeforeUnmount(() => {
     </div>
 
     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;">
-      <div class="card" style="padding:12px 14px;">
+      <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...thresholdCardStyle(panel.totalCurrent, panel.overcurrentThreshold) }">
         <div style="font-size:12px;color:var(--color-text-muted);">전체전류</div>
         <div style="font-size:16px;font-weight:700;">{{ panel.totalCurrent != null ? panel.totalCurrent + 'A' : '-' }}</div>
       </div>
-      <div class="card" style="padding:12px 14px;">
+      <div class="card" style="padding:12px 14px;height:87px;box-sizing:border-box;">
         <div style="font-size:12px;color:var(--color-text-muted);">전압</div>
         <div style="font-size:16px;font-weight:700;">{{ panel.voltV != null ? panel.voltV + 'V' : '-' }}</div>
       </div>
-      <div class="card" style="padding:12px 14px;">
+      <div class="card" style="padding:12px 14px;height:87px;box-sizing:border-box;">
         <div style="font-size:12px;color:var(--color-text-muted);">전체전력</div>
         <div style="font-size:16px;font-weight:700;">{{ panel.totalPower != null ? panel.totalPower + 'W' : '-' }}</div>
       </div>
-      <div class="card" style="padding:12px 14px;">
+      <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...doorCardStyle(panel.doorStatus) }">
         <div style="font-size:12px;color:var(--color-text-muted);">도어</div>
         <div style="font-size:16px;font-weight:700;">{{ panel.doorStatus == null ? '-' : (panel.doorStatus ? '열림' : '닫힘') }}</div>
       </div>
@@ -124,7 +136,7 @@ onBeforeUnmount(() => {
 
     <h3>회로 목록</h3>
     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;">
-      <div v-for="c in panel.circuits" :key="c.circuitId" class="card" :style="{ padding: '12px 14px', ...circuitCardStyle(c.status) }">
+      <div v-for="c in panel.circuits" :key="c.circuitId" class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...circuitCardStyle(c.status) }">
         <div style="font-weight:700;">회로 {{ c.channelNo }}</div>
         <div style="font-size:15px;font-weight:700;">{{ c.currentA != null ? c.currentA + 'A' : '-' }}</div>
         <div style="font-size:11px;opacity:.85;">아크 {{ c.arcCounter ?? 0 }}회</div>
@@ -134,19 +146,19 @@ onBeforeUnmount(() => {
 
     <h3>환경</h3>
     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;">
-      <div class="card" style="padding:12px 14px;">
+      <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...thresholdCardStyle(panel.temperature, panel.tempThreshold) }">
         <div style="font-size:12px;color:var(--color-text-muted);">온도</div>
         <div style="font-size:16px;font-weight:700;">{{ panel.temperature != null ? panel.temperature + '°C' : '-' }}</div>
       </div>
-      <div class="card" style="padding:12px 14px;">
+      <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...thresholdCardStyle(panel.humidity, panel.humidityThreshold) }">
         <div style="font-size:12px;color:var(--color-text-muted);">습도</div>
         <div style="font-size:16px;font-weight:700;">{{ panel.humidity != null ? panel.humidity + '%' : '-' }}</div>
       </div>
-      <div class="card" style="padding:12px 14px;">
+      <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...thresholdCardStyle(panel.fireRaw, panel.fireThreshold) }">
         <div style="font-size:12px;color:var(--color-text-muted);">불꽃센서</div>
         <div style="font-size:16px;font-weight:700;">{{ panel.fireRaw ?? '-' }}</div>
       </div>
-      <div class="card" style="padding:12px 14px;">
+      <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...thresholdCardStyle(panel.gasRaw, panel.gasThreshold) }">
         <div style="font-size:12px;color:var(--color-text-muted);">가스센서</div>
         <div style="font-size:16px;font-weight:700;">{{ panel.gasRaw ?? '-' }}</div>
       </div>
