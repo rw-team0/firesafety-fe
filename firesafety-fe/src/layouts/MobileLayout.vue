@@ -15,8 +15,8 @@ const showLogoutConfirm = ref(false)
 onMounted(() => monitoring.start())
 
 const tabs = [
-  { name:'dashboard-mobile', path:'/m/dashboard', label:'대시보드' },
   { name:'alerts-mobile', path:'/m/alerts', label:'알림 이력' },
+  { name:'dashboard-mobile', path:'/m/dashboard', label:'대시보드' },
 ]
 function doLogout(){
   showLogoutConfirm.value = false
@@ -30,9 +30,9 @@ function goToPanel() {
 
 <template>
   <div style="display:flex;flex-direction:column;height:100vh;">
-    <header style="padding:8px 14px;display:flex;align-items:center;gap:8px;font-size:11px;flex:none;color:var(--color-text-muted);">
-      <img src="/arcguard.png" alt="ArcGuard" style="width:18px;height:18px;border-radius:4px;" />
-      <span style="font-weight:700;color:var(--color-text);">ArcGuard</span>
+    <header style="padding:16px 16px;display:flex;align-items:center;gap:10px;font-size:11px;flex:none;color:var(--color-text-muted);">
+      <img src="/arcguard.png" alt="ArcGuard" style="width:32px;height:32px;border-radius:8px;" />
+      <span style="font-weight:700;color:var(--color-text);font-size:15px;">ArcGuard</span>
       <span :style="{ color: monitoring.wsConnected ? 'var(--color-success)' : 'var(--color-offline)' }">● 통신 {{ monitoring.wsConnected ? '정상' : '두절' }}</span>
       <span style="margin-left:auto;">미확인 알림 {{ monitoring.unreadAlertCount }}</span>
       <span>{{ auth.user?.name }} {{ auth.role }}</span>
@@ -41,10 +41,10 @@ function goToPanel() {
     <nav style="display:flex;border-top:1px solid var(--color-border);flex:none;">
       <router-link
         v-for="t in tabs" :key="t.name" :to="t.path"
-        :style="{flex:1,textAlign:'center',padding:'8px 4px',fontSize:'10.5px',color:'var(--color-text)',textDecoration:'none',
+        :style="{flex:1,textAlign:'center',padding:'14px 4px',fontSize:'11.5px',color:'var(--color-text)',textDecoration:'none',
           borderTop: route.name===t.name ? '2px solid var(--color-accent)' : '2px solid transparent'}"
       >{{ t.label }}</router-link>
-      <div @click="showLogoutConfirm = true" style="flex:1;text-align:center;padding:8px 4px;font-size:10.5px;color:var(--color-text);cursor:pointer;">로그아웃</div>
+      <div @click="showLogoutConfirm = true" style="flex:1;text-align:center;padding:14px 4px;font-size:11.5px;color:var(--color-text);cursor:pointer;">로그아웃</div>
     </nav>
 
     <ConfirmModal v-if="showLogoutConfirm" title="로그아웃"

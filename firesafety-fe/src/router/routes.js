@@ -19,6 +19,9 @@ import DashboardView from '@/views/DashboardView.vue'
 import AlertHistoryView from '@/views/AlertHistoryView.vue'
 import StatisticsView from '@/views/StatisticsView.vue'
 import SiteAssignmentView from '@/views/SiteAssignmentView.vue'
+import MobileLoginView from '@/views/MobileLoginView.vue'
+import MobileDashboardView from '@/views/MobileDashboardView.vue'
+import MobileAlertView from '@/views/MobileAlertView.vue'
 
 // ── 웹 라우트 ──────────────────────────────
 //여기에 각 프론트엔드 뷰 추가(경로, 이름, 컴포넌트, 권한)
@@ -68,15 +71,14 @@ const passwordResetRoutes = {
 const mobileAuthRoutes = {
   path: '/m/login',
   component: AuthLayout,
-  //children: [{ path: '', name: 'login-mobile', component: PlaceholderView, meta: { requiredRole: null } }],
-  children: [{ path: '', name: 'login-mobile', component: LoginView, meta: { requiredRole: null } }],
+  children: [{ path: '', name: 'login-mobile', component: MobileLoginView, meta: { requiredRole: null } }],
 }
 const mobileRoutes = {
   path: '/m',
   component: MobileLayout,
   children: [
-    { path: 'dashboard', name: 'dashboard-mobile', component: DashboardView, meta: { requiredRole: 'GENERAL' } },
-    { path: 'alerts', name: 'alerts-mobile', component: AlertHistoryView, meta: { requiredRole: 'GENERAL' } },
+    { path: 'dashboard', name: 'dashboard-mobile', component: MobileDashboardView, meta: { requiredRole: 'GENERAL' } },
+    { path: 'alerts', name: 'alerts-mobile', component: MobileAlertView, meta: { requiredRole: 'GENERAL' } },
   ],
 }
 
