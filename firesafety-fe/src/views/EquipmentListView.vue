@@ -1,8 +1,10 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
 import ConfirmModal from '../components/ConfirmModal.vue'
 
+const router = useRouter()
 const panels = ref([])
 const status = ref('')
 const keyword = ref('') // PanelListReq엔 keyword 파라미터가 없어서(Swagger 확인) 불러온 목록을 클라이언트에서 필터링
@@ -94,7 +96,7 @@ async function confirmBulkDelete() {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="p in filteredPanels" :key="p.panelId" style="border-bottom:1px solid var(--color-border);">
+        <tr v-for="p in filteredPanels" :key="p.panelId" style="border-bottom:1px solid var(--color-border);cursor:pointer;" @click="router.push(`/equipment/${p.panelId}`)">
           <td style="padding:8px;" @click.stop><input type="checkbox" v-model="selected" :value="p.panelId" /></td>
           <td style="padding:8px;">{{ p.mNo || '-' }}</td>
           <td style="padding:8px;">{{ p.name }}</td>
@@ -104,7 +106,7 @@ async function confirmBulkDelete() {
             </span>
           </td>
           <td style="padding:8px;">{{ formatRelative(p.lastCommunicatedAt) }}</td>
-          <td style="padding:8px;text-align:right;">
+          <td style="padding:8px;text-align:right;" @click.stop>
             <router-link :to="`/equipment/${p.panelId}`" class="btn">상세보기 &gt;</router-link>
           </td>
         </tr>

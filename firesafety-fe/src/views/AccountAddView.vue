@@ -8,7 +8,8 @@ import { useUiAlertStore } from '../stores/uiAlert'
 const router = useRouter()
 const auth = useAuthStore()
 const uiAlert = useUiAlertStore()
-const form = ref({ name:'', email:'', password:'', phone:'', role:'GENERAL', siteIds:[] })
+const form = ref({ name:'', email:'', password:'', phone:'', role:'GENERAL', siteId:'' })
+const passwordConfirm = ref('')
 const errorMsg = ref('')
 const sites = ref([])
 const emailChecked = ref(false)
@@ -38,14 +39,18 @@ async function checkEmail() {
 
 async function submit() {
   errorMsg.value = ''
+  if (form.value.password !== passwordConfirm.value) {
+    errorMsg.value = '비밀번호가 일치하지 않습니다.'
+    return
+  }
   try {
     // Swagger 확인(UserCreateReq): email/password/name/phone/role 필수·선택 필드 — password는 예전엔 입력칸 자체가
-    // 없어서 실제로는 등록이 안 됐음. siteIds는 UserCreateReq에 없는 필드라 여기 보내도 무시되므로
+    // 없어서 실제로는 등록이 안 됐음. siteId는 UserCreateReq에 없는 필드라 여기 보내도 무시되므로
     // 계정 생성 성공 후 담당현장배정 API(POST /users/{id}/site-assignments)로 별도 저장
-    const { siteIds, ...body } = form.value
+    const { siteId, ...body } = form.value
     const res = await httpRequester.post('/users', body) // Swagger 확인: POST /api/users
-    if (siteIds.length) {
-      await httpRequester.post(`/users/${res.data.resultData.userId}/site-assignments`, { siteIds })
+    if (siteId) {
+      await httpRequester.post(`/users/${res.data.resultData.userId}/site-assignments`, { siteIds: [siteId] })
     }
     router.push('/settings/accounts')
   } catch (e) {
@@ -75,8 +80,11 @@ function cancel() {
       </div>
       <p v-if="emailChecked" style="font-size:12px;color:var(--color-text-muted);margin:-10px 0 16px;">{{ emailAvailable ? '사용 가능' : '이미 사용 중' }}</p>
 
-      <label class="field-label">초기 비밀번호</label>
+      <label class="field-label">비밀번호</label>
       <input v-model="form.password" type="password" placeholder="영문+숫자 8자 이상" class="field-input" autocomplete="new-password">
+
+      <label class="field-label">비밀번호 확인</label>
+      <input v-model="passwordConfirm" type="password" placeholder="비밀번호를 다시 입력하세요" class="field-input" autocomplete="new-password">
 
       <label class="field-label">연락처</label>
       <input v-model="form.phone" placeholder="연락처" class="field-input">
@@ -86,14 +94,15 @@ function cancel() {
         <option v-for="r in availableRoles" :key="r" :value="r">{{ r==='ADMIN'?'관리자':'일반' }}</option>
       </select>
 
-      <label class="field-label">담당현장 (Ctrl/Cmd+클릭으로 다중 선택)</label>
-      <select v-model="form.siteIds" multiple class="field-input" style="height:120px;">
+      <label class="field-label">담당현장</label>
+      <select v-model="form.siteId" class="field-input">
+        <option value="">선택 안 함</option>
         <option v-for="s in sites" :key="s.siteId" :value="s.siteId">{{ s.name }}</option>
       </select>
 
-      <div style="display:flex;gap:8px;margin-top:16px;">
-        <button class="btn btn-primary" @click="submit">등록</button>
-        <button class="btn" @click="cancel">취소</button>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:16px;">
+        <button class="btn btn-primary" style="min-width:120px;" @click="submit">등록</button>
+        <button class="btn" style="min-width:120px;" @click="cancel">취소</button>
       </div>
     </div>
   </div>
