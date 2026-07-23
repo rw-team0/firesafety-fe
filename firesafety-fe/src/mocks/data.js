@@ -12,18 +12,28 @@ export const mockSites = [
   { siteId: 2, name: '레이월드2호점', address: '서울시 마포구 월드컵로 45', createdAt: '2026-01-10T09:00:00' },
 ]
 
+// totalCurrent~gasRaw는 이 분전반의 최신 수신 프레임 원시값 (실제 백엔드 GET /api/panels/{panelId} 기준).
+// panel.status 자체는 백엔드에서도 저장값(하드웨어/AI/임계치 집계 결과)이라 여기서도 고정값으로 둔다.
 export const mockPanels = [
-  { panelId: 1, siteId: 1, name: '1층 분전반', deviceSerial: 'CSTECH-SN-00001', mNo: '10001', installedAt: '2026-01-15', status: 'NORMAL', isOnline: true, lastCommunicatedAt: '2026-07-23T17:15:48', circuitCount: 3, leakMaThreshold: 20, tempThreshold: 80, humidityThreshold: 80, overcurrentThreshold: 30, gasThreshold: 5000, fireThreshold: 5000 },
-  { panelId: 2, siteId: 1, name: '2층 분전반', deviceSerial: 'CSTECH-SN-00002', mNo: '10002', installedAt: '2026-01-15', status: 'CAUTION', isOnline: true, lastCommunicatedAt: '2026-07-23T17:16:10', circuitCount: 2, leakMaThreshold: 20, tempThreshold: 80, humidityThreshold: 80, overcurrentThreshold: 30, gasThreshold: 5000, fireThreshold: 5000 },
-  { panelId: 3, siteId: 2, name: '본관 분전반', deviceSerial: 'CSTECH-SN-00003', mNo: '10003', installedAt: '2026-02-01', status: 'RISK', isOnline: true, lastCommunicatedAt: '2026-07-23T17:10:00', circuitCount: 4, leakMaThreshold: 20, tempThreshold: 80, humidityThreshold: 80, overcurrentThreshold: 30, gasThreshold: 5000, fireThreshold: 5000 },
-  { panelId: 4, siteId: 2, name: '별관 분전반', deviceSerial: 'CSTECH-SN-00004', mNo: '10004', installedAt: '2026-02-01', status: 'OFFLINE', isOnline: false, lastCommunicatedAt: '2026-07-23T15:00:00', circuitCount: 1, leakMaThreshold: 20, tempThreshold: 80, humidityThreshold: 80, overcurrentThreshold: 30, gasThreshold: 5000, fireThreshold: 5000 },
+  { panelId: 1, siteId: 1, name: '1층 분전반', deviceSerial: 'CSTECH-SN-00001', mNo: '10001', installedAt: '2026-01-15', status: 'NORMAL', isOnline: true, lastCommunicatedAt: '2026-07-23T17:15:48', circuitCount: 3, leakMaThreshold: 20, tempThreshold: 80, humidityThreshold: 80, overcurrentThreshold: 30, gasThreshold: 5000, fireThreshold: 5000, totalCurrent: 5.6, voltV: 220.0, totalPower: 480, doorStatus: false, temperature: 24.5, humidity: 45.0, fireRaw: 1200, gasRaw: 900 },
+  { panelId: 2, siteId: 1, name: '2층 분전반', deviceSerial: 'CSTECH-SN-00002', mNo: '10002', installedAt: '2026-01-15', status: 'CAUTION', isOnline: true, lastCommunicatedAt: '2026-07-23T17:16:10', circuitCount: 2, leakMaThreshold: 20, tempThreshold: 80, humidityThreshold: 80, overcurrentThreshold: 30, gasThreshold: 5000, fireThreshold: 5000, totalCurrent: 12.3, voltV: 221.0, totalPower: 900, doorStatus: false, temperature: 82.0, humidity: 50.0, fireRaw: 1300, gasRaw: 1000 },
+  { panelId: 3, siteId: 2, name: '본관 분전반', deviceSerial: 'CSTECH-SN-00003', mNo: '10003', installedAt: '2026-02-01', status: 'RISK', isOnline: true, lastCommunicatedAt: '2026-07-23T17:10:00', circuitCount: 4, leakMaThreshold: 20, tempThreshold: 80, humidityThreshold: 80, overcurrentThreshold: 30, gasThreshold: 5000, fireThreshold: 5000, totalCurrent: 30.5, voltV: 219.0, totalPower: 1500, doorStatus: false, temperature: 78.0, humidity: 55.0, fireRaw: 1400, gasRaw: 1100 },
+  { panelId: 4, siteId: 2, name: '별관 분전반', deviceSerial: 'CSTECH-SN-00004', mNo: '10004', installedAt: '2026-02-01', status: 'OFFLINE', isOnline: false, lastCommunicatedAt: '2026-07-23T15:00:00', circuitCount: 1, leakMaThreshold: 20, tempThreshold: 80, humidityThreshold: 80, overcurrentThreshold: 30, gasThreshold: 5000, fireThreshold: 5000, totalCurrent: 8.0, voltV: 218.0, totalPower: 600, doorStatus: false, temperature: 25.0, humidity: 48.0, fireRaw: 1100, gasRaw: 950 },
 ]
 
+// status는 여기 안 둔다. deviceArcFlag(하드웨어 아크)/latestAiVerdict(AI 판정)만 원시값으로 두고,
+// 실제 백엔드(PanelService.resolveCircuitStatus)와 같은 매트릭스로 핸들러에서 매번 계산한다.
 export const mockCircuits = [
-  { circuitId: 1, panelId: 1, channelNo: 1, loadType: '조명', createdAt: '2026-01-16T09:00:00' },
-  { circuitId: 2, panelId: 1, channelNo: 2, loadType: '콘센트', createdAt: '2026-01-16T09:00:00' },
-  { circuitId: 3, panelId: 2, channelNo: 1, loadType: '조명', createdAt: '2026-01-16T09:00:00' },
-  { circuitId: 4, panelId: 3, channelNo: 1, loadType: '냉난방', createdAt: '2026-02-02T09:00:00' },
+  { circuitId: 1, panelId: 1, channelNo: 1, loadType: '조명', createdAt: '2026-01-16T09:00:00', currentA: 0.4, arcCounter: 0, deviceArcFlag: false, latestAiVerdict: 'NORMAL' },
+  { circuitId: 2, panelId: 1, channelNo: 2, loadType: '콘센트', createdAt: '2026-01-16T09:00:00', currentA: 4.2, arcCounter: 0, deviceArcFlag: false, latestAiVerdict: 'NORMAL' },
+  { circuitId: 3, panelId: 1, channelNo: 3, loadType: '냉난방', createdAt: '2026-01-16T09:00:00', currentA: 1.0, arcCounter: 0, deviceArcFlag: false, latestAiVerdict: 'NORMAL' },
+  { circuitId: 4, panelId: 2, channelNo: 1, loadType: '조명', createdAt: '2026-01-16T09:00:00', currentA: 3.8, arcCounter: 0, deviceArcFlag: false, latestAiVerdict: 'NORMAL' },
+  { circuitId: 5, panelId: 2, channelNo: 2, loadType: '콘센트', createdAt: '2026-01-16T09:00:00', currentA: 8.5, arcCounter: 0, deviceArcFlag: false, latestAiVerdict: 'NORMAL' },
+  { circuitId: 6, panelId: 3, channelNo: 1, loadType: '냉난방', createdAt: '2026-02-02T09:00:00', currentA: 8.8, arcCounter: 1, deviceArcFlag: true, latestAiVerdict: 'ARC' },
+  { circuitId: 7, panelId: 3, channelNo: 2, loadType: '조명', createdAt: '2026-02-02T09:00:00', currentA: 2.1, arcCounter: 0, deviceArcFlag: false, latestAiVerdict: 'NORMAL' },
+  { circuitId: 8, panelId: 3, channelNo: 3, loadType: '콘센트', createdAt: '2026-02-02T09:00:00', currentA: 5.0, arcCounter: 0, deviceArcFlag: false, latestAiVerdict: 'ARC' },
+  { circuitId: 9, panelId: 3, channelNo: 4, loadType: '조명', createdAt: '2026-02-02T09:00:00', currentA: 1.4, arcCounter: 0, deviceArcFlag: false, latestAiVerdict: 'NORMAL' },
+  { circuitId: 10, panelId: 4, channelNo: 1, loadType: '조명', createdAt: '2026-02-02T09:00:00', currentA: 2.0, arcCounter: 0, deviceArcFlag: false, latestAiVerdict: 'NORMAL' },
 ]
 
 export const mockDiagnosis = [

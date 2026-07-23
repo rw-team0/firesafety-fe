@@ -14,6 +14,15 @@ function fail(status, resultMessage) {
 function stripPassword({ password, ...rest }) { return rest }
 function panelOrder(status) { return { OFFLINE: 0, RISK: 1, CAUTION: 2, NORMAL: 3 }[status] ?? 9 }
 
+// 회로 상태는 저장값이 아니라 매번 계산 (실제 백엔드 PanelService.resolveCircuitStatus와 동일한 매트릭스).
+// 분전반이 OFFLINE이면 소속 회로도 전부 OFFLINE, 하드웨어 아크는 RISK, AI만 아크면 CAUTION, 나머지 NORMAL.
+function resolveCircuitStatus(panel, circuit) {
+  if (panel.status === 'OFFLINE') return 'OFFLINE'
+  if (circuit.deviceArcFlag) return 'RISK'
+  if (circuit.latestAiVerdict === 'ARC') return 'CAUTION'
+  return 'NORMAL'
+}
+
 const TYPE_LABEL = { ARC: '아크', OVERHEAT: '과열', LEAKAGE: '누설', OVERCURRENT: '과전류', HUMIDITY: '습도', GAS: '가스', FIRE: '불꽃', DOOR_OPEN: '도어열림', DEVICE_ERROR: '장비오류', COMM_LOST: '통신두절' }
 const STATUS_LABEL = { UNCONFIRMED: '미확인', CONFIRMED: '확인됨', RESOLVED: '조치됨' }
 const PANEL_STATUS_LABEL = { NORMAL: '정상', CAUTION: '주의', RISK: '위험', OFFLINE: '오프라인' }
@@ -135,7 +144,25 @@ export const handlers = [
   }),
   http.get('/api/panels/:panelId', ({ params }) => {
     const panel = mockPanels.find((p) => p.panelId === Number(params.panelId))
-    return panel ? ok(panel) : fail(404, '존재하지 않는 분전반입니다')
+    if (!panel) return fail(404, '존재하지 않는 분전반입니다')
+
+    const circuits = mockCircuits
+      .filter((c) => c.panelId === panel.panelId)
+      .map((c) => ({
+        circuitId: c.circuitId,
+        channelNo: c.channelNo,
+        loadType: c.loadType,
+        currentA: c.currentA,
+        arcCounter: c.arcCounter,
+        status: resolveCircuitStatus(panel, c),
+      }))
+    const recentAlerts = mockAlerts
+      .filter((a) => a.panelId === panel.panelId)
+      .sort((a, b) => new Date(b.triggeredAt) - new Date(a.triggeredAt))
+      .slice(0, 5)
+      .map(({ alertId, type, triggeredAt }) => ({ alertId, type, triggeredAt }))
+
+    return ok({ ...panel, circuits, recentAlerts })
   }),
   http.put('/api/panels/:panelId', async ({ params, request }) => {
     const body = await request.json()
