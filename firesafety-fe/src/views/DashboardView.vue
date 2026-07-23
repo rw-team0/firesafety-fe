@@ -67,7 +67,7 @@ async function loadSummary() {
 
 async function loadRecentAlerts() {
   try {
-    const res = await httpRequester.get('/alerts', { params: { page: 0, size: 5 } })
+    const res = await httpRequester.get('/alerts', { params: { page: 0, size: 4 } })
     recentAlerts.value = res.data.resultData.content
   } catch (e) {
     // 부가 정보라 실패해도 대시보드 전체를 막지 않음
@@ -186,9 +186,9 @@ function goToAlert(alertId) {
         <p v-if="!recentAlerts.length" style="color:var(--color-text-muted);">최근 알림이 없습니다.</p>
       </div>
 
-      <div style="display:flex;gap:16px;align-items:center;">
-        <h3 style="width:80px;flex:none;margin:0;">장비 현황</h3>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;flex:1;">
+      <div>
+        <h3 style="margin:0 0 12px;">장비 현황</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;">
           <div
             v-for="p in panelGrid"
             :key="p.panelId"
