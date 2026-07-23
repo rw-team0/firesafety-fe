@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import { useAuthStore } from '../stores/auth'
@@ -12,6 +12,7 @@ import { useAuthStore } from '../stores/auth'
 
 const auth = useAuthStore()
 const route = useRoute()
+const router = useRouter()
 // 설비 목록(EquipmentListView)의 "설비 추가"에서 ?tab=panels로 넘어오면 분전반관리 탭이 바로 열리도록
 const validTabs = ['sites', 'panels', 'circuits']
 // ADMIN은 현장관리 탭 자체가 없어서(현장 등록은 SUPER_ADMIN 전용) 기본 탭도 분전반관리로 시작해야 함
@@ -87,7 +88,6 @@ const managedPanels = ref([])
 const managedPanelsLoading = ref(false)
 const selectedPanelIds = ref([])
 const showPanelBulkDeleteConfirm = ref(false)
-const editingPanelId = ref(null) // null이면 신규등록 모드
 const panelSubmitting = ref(false)
 const panelErrorMsg = ref('')
 function emptyPanelForm() {
@@ -118,23 +118,11 @@ async function loadManagedPanels() {
 watch(() => panelForm.value.siteId, loadManagedPanels)
 
 function resetPanelForm() {
-  editingPanelId.value = null
   const siteId = panelForm.value.siteId
   panelForm.value = emptyPanelForm()
   panelForm.value.siteId = siteId
 }
-async function openPanelDetail(panelId) {
-  const res = await httpRequester.get(`/panels/${panelId}`)
-  const p = res.data.resultData
-  editingPanelId.value = panelId
-  panelForm.value = {
-    siteId: p.siteId, name: p.name ?? '', deviceSerial: p.deviceSerial ?? '',
-    installedAt: p.installedAt ?? '', circuitCount: p.circuitCount ?? 1,
-    leakMaThreshold: p.leakMaThreshold, tempThreshold: p.tempThreshold, humidityThreshold: p.humidityThreshold,
-    overcurrentThreshold: p.overcurrentThreshold, gasThreshold: p.gasThreshold, fireThreshold: p.fireThreshold,
-    mNo: p.mNo ?? '',
-  }
-}
+// 분전반 수정은 상세 페이지(EquipmentDetailView "임계값 설정")로 이관됨 — 이 폼은 신규등록 전용
 async function savePanelForm() {
   panelErrorMsg.value = ''
   if (!panelForm.value.siteId || !panelForm.value.name || !panelForm.value.deviceSerial) {
@@ -144,8 +132,7 @@ async function savePanelForm() {
   panelSubmitting.value = true
   try {
     const { siteId, ...body } = panelForm.value
-    if (editingPanelId.value) await httpRequester.put(`/panels/${editingPanelId.value}`, body)
-    else await httpRequester.post(`/sites/${siteId}/panels`, body)
+    await httpRequester.post(`/sites/${siteId}/panels`, body)
     resetPanelForm()
     loadManagedPanels()
     loadAllPanels()
@@ -165,7 +152,6 @@ async function confirmPanelBulkDelete() {
   for (const panelId of selectedPanelIds.value) {
     await httpRequester.delete(`/panels/${panelId}`)
   }
-  if (selectedPanelIds.value.includes(editingPanelId.value)) resetPanelForm()
   loadManagedPanels()
   loadAllPanels()
 }
@@ -255,6 +241,7 @@ onMounted(async () => {
       <button v-if="auth.role === 'SUPER_ADMIN'" class="btn" :class="{ 'btn-primary': tab==='sites' }" @click="tab='sites'">현장관리</button>
       <button class="btn" :class="{ 'btn-primary': tab==='panels' }" @click="tab='panels'">분전반관리</button>
       <button class="btn" :class="{ 'btn-primary': tab==='circuits' }" @click="tab='circuits'">회로관리</button>
+      <router-link v-if="auth.role === 'SUPER_ADMIN'" class="btn" to="/settings/facilities/history" style="margin-left:auto;">관리 이력</router-link>
     </div>
 
     <!-- 현장관리: 좌 등록/수정폼 + 우 목록(선택삭제) — 분전반관리와 동일 패턴, 와이어프레임 기준 -->
@@ -272,7 +259,7 @@ onMounted(async () => {
           <button class="btn btn-primary" style="min-width:120px;" :disabled="siteSubmitting" @click="saveSiteForm">
             {{ siteSubmitting ? '처리 중...' : (editingSiteId ? '수정' : '등록') }}
           </button>
-          <button class="btn" @click="resetSiteForm">취소</button>
+          <button class="btn" style="min-width:120px;" @click="resetSiteForm">취소</button>
         </div>
       </div>
 
@@ -362,9 +349,9 @@ onMounted(async () => {
 
         <div style="display:flex;gap:8px;justify-content:center;margin-top:8px;">
           <button class="btn btn-primary" style="min-width:120px;" :disabled="panelSubmitting" @click="savePanelForm">
-            {{ panelSubmitting ? '처리 중...' : (editingPanelId ? '수정' : '등록') }}
+            {{ panelSubmitting ? '처리 중...' : '등록' }}
           </button>
-          <button class="btn" @click="resetPanelForm">취소</button>
+          <button class="btn" style="min-width:120px;" @click="resetPanelForm">취소</button>
         </div>
       </div>
 
@@ -390,7 +377,9 @@ onMounted(async () => {
               <td style="padding:8px;">{{ p.name }}</td>
               <td style="padding:8px;">{{ sites.find(s => s.siteId === p.siteId)?.name ?? '-' }}</td>
               <td style="padding:8px;">{{ p.registeredCount }}/{{ p.circuitCount }}</td>
-              <td style="padding:8px;"><button class="btn" @click="openPanelDetail(p.panelId)">상세</button></td>
+              <td style="padding:8px;">
+                <button class="btn" @click="router.push(`/equipment/${p.panelId}`)">상세</button>
+              </td>
             </tr>
             <tr v-if="!managedPanels.length">
               <td colspan="5" style="padding:16px;text-align:center;color:var(--color-text-muted);">등록된 분전반이 없습니다.</td>

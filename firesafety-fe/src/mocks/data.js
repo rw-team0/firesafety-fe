@@ -51,6 +51,14 @@ export const mockUserAuditLogs = [
   { auditId: 1, targetUserId: 3, actorUserId: 1, action: 'CREATE', actionLabel: '추가', beforeData: null, afterData: { email: 'general@firesafety.com', name: '박직원', role: 'GENERAL' }, createdAt: '2026-02-10T09:00:00' },
 ]
 
+export const mockFacilityAuditLogs = [
+  { auditId: 1, targetType: 'SITE', targetId: 1, actorUserId: 1, action: 'CREATE', beforeData: null, afterData: { name: '레이월드1호점', address: '서울시 강남구 테헤란로 123' }, createdAt: '2026-01-01T09:00:00' },
+  { auditId: 2, targetType: 'PANEL', targetId: 1, actorUserId: 2, action: 'CREATE', beforeData: null, afterData: { name: '1층 분전반', mNo: '10001', circuitCount: 3 }, createdAt: '2026-01-15T09:00:00' },
+  { auditId: 3, targetType: 'PANEL', targetId: 2, actorUserId: 2, action: 'UPDATE', beforeData: { tempThreshold: 70 }, afterData: { tempThreshold: 80 }, createdAt: '2026-07-20T11:20:00' },
+  { auditId: 4, targetType: 'CIRCUIT', targetId: 4, actorUserId: 2, action: 'CREATE', beforeData: null, afterData: { channelNo: 1, loadType: '냉난방' }, createdAt: '2026-02-02T09:00:00' },
+  { auditId: 5, targetType: 'PANEL', targetId: 4, actorUserId: 1, action: 'DELETE', beforeData: { name: '별관 분전반' }, afterData: null, createdAt: '2026-07-22T15:30:00' },
+]
+
 export const mockSiteAssignments = [
   { mappingId: 1, userId: 2, siteId: 1, siteName: '레이월드1호점', siteAddress: '서울시 강남구 테헤란로 123', assignedAt: '2026-01-05T09:10:00' },
   { mappingId: 2, userId: 2, siteId: 2, siteName: '레이월드2호점', siteAddress: '서울시 마포구 월드컵로 45', assignedAt: '2026-01-10T09:10:00' },

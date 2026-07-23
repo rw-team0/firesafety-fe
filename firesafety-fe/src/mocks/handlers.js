@@ -1,7 +1,7 @@
 import { http, HttpResponse } from 'msw'
 import {
   mockUsers, mockSites, mockPanels, mockCircuits, mockDiagnosis,
-  mockAlerts, mockUserAuditLogs, mockSiteAssignments, ids,
+  mockAlerts, mockUserAuditLogs, mockFacilityAuditLogs, mockSiteAssignments, ids,
 } from './data'
 
 // 실제 백엔드 ResultResponse<T>{resultMessage, resultData} 형태 그대로 흉내냄
@@ -296,6 +296,14 @@ export const handlers = [
     })
   }),
 
-  // ── 설비 변경 이력(아직 FE 화면 없음, mock은 빈 목록만) ──
-  http.get('/api/facilities/audit-logs', () => ok({ content: [], totalElements: 0, page: 0, size: 20 })),
+  // ── 설비 변경 이력 ──
+  http.get('/api/facilities/audit-logs', ({ request }) => {
+    const url = new URL(request.url)
+    const from = url.searchParams.get('from')
+    const to = url.searchParams.get('to')
+    let logs = mockFacilityAuditLogs
+    if (from) logs = logs.filter((l) => l.createdAt.slice(0, 10) >= from)
+    if (to) logs = logs.filter((l) => l.createdAt.slice(0, 10) <= to)
+    return ok({ content: logs, totalElements: logs.length, page: 0, size: 50 })
+  }),
 ]
