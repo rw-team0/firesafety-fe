@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useUiAlertStore } from '../stores/uiAlert';
 
 const httpRequester = axios.create({
   baseURL: '/api',
@@ -12,7 +13,7 @@ httpRequester.interceptors.response.use(
   // 실패 응답은 여기서 전부 처리
   async err => {
     if (!err.response) {
-      alert('네트워크 오류가 발생했습니다.');
+      useUiAlertStore().show('네트워크 오류가 발생했습니다.');
       return Promise.reject(err);
     }
 
@@ -35,7 +36,7 @@ httpRequester.interceptors.response.use(
     }
 
     // 그 외 모든 에러 (400/403/404/409/500 등) → 서버가 보낸 메시지를 그대로 안내
-    alert(data.resultMessage ?? '요청 처리 중 오류가 발생했습니다.');
+    useUiAlertStore().show(data.resultMessage ?? '요청 처리 중 오류가 발생했습니다.');
     return Promise.reject(err);
   }
 );

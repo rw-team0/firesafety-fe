@@ -3,9 +3,11 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
 import { useAuthStore } from '../stores/auth'
+import { useUiAlertStore } from '../stores/uiAlert'
 
 const router = useRouter()
 const auth = useAuthStore()
+const uiAlert = useUiAlertStore()
 const form = ref({ name:'', email:'', phone:'', role:'GENERAL', siteIds:[] })
 const errorMsg = ref('')
 const sites = ref([])
@@ -31,7 +33,7 @@ async function checkEmail() {
   // 전용 API(예: GET /users/check-email?email=)가 추가되면 아래로 교체:
   // const res = await httpRequester.get('/users/check-email', { params: { email: form.value.email } })
   // emailAvailable.value = !res.data.resultData.duplicate
-  alert('이메일 중복확인 API가 아직 백엔드에 없습니다. 등록 시 중복이면 오류로 안내됩니다.')
+  uiAlert.show('이메일 중복확인 API가 아직 백엔드에 없습니다. 등록 시 중복이면 오류로 안내됩니다.')
 }
 
 async function submit() {
@@ -48,23 +50,34 @@ async function submit() {
 
 <template>
   <div>
-    <div v-if="errorMsg" class="banner-error">{{ errorMsg }}</div>
-    <input v-model="form.name" placeholder="이름">
-    <input v-model="form.email" placeholder="이메일" @input="onEmailInput">
-    <button @click="checkEmail">중복확인</button>
-    <span v-if="emailChecked">{{ emailAvailable ? '사용 가능' : '이미 사용 중' }}</span>
-    <input v-model="form.phone" placeholder="연락처">
-    <select v-model="form.role">
-      <option v-for="r in availableRoles" :key="r" :value="r">{{ r==='ADMIN'?'관리자':'일반' }}</option>
-    </select>
+    <h2 style="margin-top:0;">계정 추가</h2>
+    <div class="card" style="max-width:420px;padding:24px;">
+      <div v-if="errorMsg" class="banner banner-danger">{{ errorMsg }}</div>
 
-    <div>
-      <p>담당현장</p>
-      <label v-for="s in sites" :key="s.siteId" style="display:block;">
+      <label class="field-label">이름</label>
+      <input v-model="form.name" placeholder="이름" class="field-input">
+
+      <label class="field-label">이메일</label>
+      <div style="display:flex;gap:8px;align-items:flex-start;">
+        <input v-model="form.email" placeholder="이메일" class="field-input" style="flex:1;" @input="onEmailInput">
+        <button class="btn" @click="checkEmail">중복확인</button>
+      </div>
+      <p v-if="emailChecked" style="font-size:12px;color:var(--color-text-muted);margin:-10px 0 16px;">{{ emailAvailable ? '사용 가능' : '이미 사용 중' }}</p>
+
+      <label class="field-label">연락처</label>
+      <input v-model="form.phone" placeholder="연락처" class="field-input">
+
+      <label class="field-label">역할</label>
+      <select v-model="form.role" class="field-input">
+        <option v-for="r in availableRoles" :key="r" :value="r">{{ r==='ADMIN'?'관리자':'일반' }}</option>
+      </select>
+
+      <p class="field-label" style="margin-bottom:8px;">담당현장</p>
+      <label v-for="s in sites" :key="s.siteId" style="display:block;font-size:14px;color:var(--color-text);margin-bottom:4px;">
         <input type="checkbox" v-model="form.siteIds" :value="s.siteId" />{{ s.name }}
       </label>
-    </div>
 
-    <button @click="submit">등록</button>
+      <button class="btn btn-primary" style="margin-top:16px;" @click="submit">등록</button>
+    </div>
   </div>
 </template>

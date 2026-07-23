@@ -51,24 +51,34 @@ async function confirmRemove() {
 
 <template>
   <div v-if="!loading">
-    <div v-if="forbidden" class="banner-error">403 — 이 계정은 최고관리자만 수정할 수 있습니다.</div>
-    <div v-if="errorMsg" class="banner-error">{{ errorMsg }}</div>
-    <fieldset :disabled="forbidden">
-      <input v-model="form.name" placeholder="이름">
-      <input v-model="form.email" placeholder="이메일">
-      <input v-model="form.phone" placeholder="연락처">
-      <select v-model="form.role"><option value="GENERAL">일반</option><option value="ADMIN">관리자</option></select>
+    <h2 style="margin-top:0;">계정 수정</h2>
+    <div class="card" style="max-width:420px;padding:24px;">
+      <div v-if="forbidden" class="banner banner-danger">403 — 이 계정은 최고관리자만 수정할 수 있습니다.</div>
+      <div v-if="errorMsg" class="banner banner-danger">{{ errorMsg }}</div>
+      <fieldset :disabled="forbidden" style="border:none;padding:0;margin:0;">
+        <label class="field-label">이름</label>
+        <input v-model="form.name" placeholder="이름" class="field-input">
 
-      <div>
-        <p>담당현장</p>
-        <label v-for="s in sites" :key="s.siteId" style="display:block;">
+        <label class="field-label">이메일</label>
+        <input v-model="form.email" placeholder="이메일" class="field-input">
+
+        <label class="field-label">연락처</label>
+        <input v-model="form.phone" placeholder="연락처" class="field-input">
+
+        <label class="field-label">역할</label>
+        <select v-model="form.role" class="field-input"><option value="GENERAL">일반</option><option value="ADMIN">관리자</option></select>
+
+        <p class="field-label" style="margin-bottom:8px;">담당현장</p>
+        <label v-for="s in sites" :key="s.siteId" style="display:block;font-size:14px;color:var(--color-text);margin-bottom:4px;">
           <input type="checkbox" v-model="form.siteIds" :value="s.siteId" />{{ s.name }}
         </label>
-      </div>
 
-      <button @click="save">저장</button>
-      <button @click="showDeleteConfirm = true">삭제</button>
-    </fieldset>
+        <div style="display:flex;gap:8px;margin-top:16px;">
+          <button class="btn btn-primary" @click="save">저장</button>
+          <button class="btn btn-danger" @click="showDeleteConfirm = true">삭제</button>
+        </div>
+      </fieldset>
+    </div>
 
     <ConfirmModal v-if="showDeleteConfirm" title="계정 삭제 확인"
       message="정말로 이 계정을 삭제하시겠습니까?" danger

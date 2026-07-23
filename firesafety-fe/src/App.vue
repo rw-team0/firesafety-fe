@@ -1,4 +1,6 @@
-<script setup></script>
+<script setup>
+import AlertModal from './components/AlertModal.vue'
+</script>
 
 <template>
   <!-- <h1>You did it!</h1>
@@ -7,6 +9,7 @@
     documentation
   </p> -->
   <router-view />
+  <AlertModal />
 </template>
 
 <!-- <style scoped></style> -->
@@ -19,6 +22,7 @@ html, body {
   padding: 0;
   width: 100%;
   height: 100%;
+  font-family: 'Noto Sans KR', -apple-system, sans-serif;
 }
 #app {
   width: 100%;

@@ -1,0 +1,104 @@
+/* 프론트엔드 개발가이드 3절 팔레트 + 피그마 와이어프레임(밝은 회색/흰 카드 톤) 기준 공용 디자인 토큰.
+   상태색(success/warning/danger/offline)과 사이드바 배경만 가이드에 명시되어 있고,
+   accent(강조색)는 가이드에 없어서 와이어프레임에 나오는 무채색 검정 버튼 톤으로 통일함. */
+:root {
+  --color-success: #14ae5c;
+  --color-warning: #e8b931;
+  --color-danger: #ec221f;
+  --color-offline: #787878;
+  --color-bg: #f3f3f3;
+  --color-surface: #ffffff;
+  --color-border: #e0e0e0;
+  --color-text: #222222;
+  --color-text-muted: #767676;
+  --color-accent: #222222;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.btn {
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-primary { background: var(--color-accent); border-color: var(--color-accent); color: #fff; }
+.btn-danger { background: var(--color-danger); border-color: var(--color-danger); color: #fff; }
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  color: #fff;
+}
+
+.field-label {
+  display: block;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+.field-input {
+  width: 100%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  padding: 10px 12px;
+  font-size: 14px;
+  margin-bottom: 16px;
+  box-sizing: border-box;
+}
+.field-input:focus { outline: none; border-color: var(--color-accent); }
+
+.banner {
+  font-size: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+}
+.banner-danger { background: rgba(236, 34, 31, .1); border: 1px solid rgba(236, 34, 31, .3); color: var(--color-danger); }
+.banner-warn { background: rgba(232, 185, 49, .14); border: 1px solid rgba(232, 185, 49, .35); color: #8a6a1a; }
+.banner-info { background: rgba(20, 174, 92, .1); border: 1px solid rgba(20, 174, 92, .3); color: var(--color-success); text-align: center; }
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+/* 전역 알림 모달(AlertModal)이 ConfirmModal 위에 뜰 수 있도록 z-index를 한 단계 높게 둔 변형 */
+.modal-overlay-top { z-index: 200; }
+.modal-panel {
+  width: 360px;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.modal-header {
+  padding: 14px 18px;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+}
+.modal-header.danger { background: var(--color-danger); color: #fff; border-bottom: none; }
+.modal-body { padding: 18px; }
+.modal-body p { color: var(--color-text-muted); font-size: 13px; margin: 0 0 16px; white-space: pre-line; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; }

@@ -12,9 +12,9 @@ const logs = ref([])
 const loading = ref(false)
 
 const badgeStyle = {
-  CREATE: { background: '#2ECC71', label: '추가' },
-  UPDATE: { background: '#F5B400', label: '수정' },
-  DELETE: { background: '#EF4B54', label: '삭제' },
+  CREATE: { background: 'var(--color-success)', label: '추가' },
+  UPDATE: { background: 'var(--color-warning)', label: '수정' },
+  DELETE: { background: 'var(--color-danger)', label: '삭제' },
 }
 
 onMounted(async () => {
@@ -26,14 +26,14 @@ onMounted(async () => {
 <template>
   <div>
     <h2 style="margin-top:0;">계정 관리 이력</h2>
-    <p style="color:#93A1BE;font-size:12.5px;">
+    <p style="color:var(--color-text-muted);font-size:12.5px;">
       ※ 계정관리이력 조회 API가 아직 백엔드에 없어 목록이 항상 비어 있습니다. API 추가 후 연결 예정입니다.
     </p>
 
-    <p v-if="loading" style="color:#93A1BE;">불러오는 중...</p>
+    <p v-if="loading" style="color:var(--color-text-muted);">불러오는 중...</p>
     <table v-else style="width:100%;border-collapse:collapse;">
       <thead>
-        <tr style="text-align:left;border-bottom:1px solid #243452;">
+        <tr style="text-align:left;border-bottom:1px solid var(--color-border);">
           <th style="padding:8px;">대상계정</th>
           <th style="padding:8px;">대상계정역할</th>
           <th style="padding:8px;">관리계정명</th>
@@ -43,12 +43,12 @@ onMounted(async () => {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="log in logs" :key="log.id" style="border-bottom:1px solid #243452;">
+        <tr v-for="log in logs" :key="log.id" style="border-bottom:1px solid var(--color-border);">
           <td style="padding:8px;">{{ log.targetName }}</td>
           <td style="padding:8px;">{{ ROLE_LABEL[log.targetRole] ?? log.targetRole }}</td>
           <td style="padding:8px;">{{ log.actorName }}</td>
           <td style="padding:8px;">
-            <span :style="{ background: badgeStyle[log.actionType]?.background, color:'#fff', padding:'2px 8px', borderRadius:'4px', fontSize:'11px' }">
+            <span class="badge" :style="{ background: badgeStyle[log.actionType]?.background }">
               {{ badgeStyle[log.actionType]?.label ?? log.actionType }}
             </span>
           </td>
@@ -56,7 +56,7 @@ onMounted(async () => {
           <td style="padding:8px;">{{ log.createdAt }}</td>
         </tr>
         <tr v-if="!logs.length">
-          <td colspan="6" style="padding:16px;text-align:center;color:#93A1BE;">이력이 없습니다.</td>
+          <td colspan="6" style="padding:16px;text-align:center;color:var(--color-text-muted);">이력이 없습니다.</td>
         </tr>
       </tbody>
     </table>

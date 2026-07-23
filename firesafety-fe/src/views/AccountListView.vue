@@ -3,6 +3,9 @@ import { ref, computed, onMounted } from 'vue'
 import httpRequester from '../utils/httpRequester'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import { ROLE_LABEL } from '../constants/roles'
+import { useUiAlertStore } from '../stores/uiAlert'
+
+const uiAlert = useUiAlertStore()
 
 const users = ref([])
 const selected = ref([])
@@ -46,7 +49,7 @@ async function confirmBulkDelete() {
   // } catch (e) {
   //   // 실패 메시지는 인터셉터가 이미 띄웠음
   // }
-  alert('벌크 삭제 API가 아직 백엔드에 없습니다. (백엔드 추가 후 AccountListView.vue의 confirmBulkDelete 주석 해제)')
+  uiAlert.show('벌크 삭제 API가 아직 백엔드에 없습니다. (백엔드 추가 후 AccountListView.vue의 confirmBulkDelete 주석 해제)')
   showDeleteConfirm.value = false
 }
 
@@ -55,29 +58,30 @@ async function restore(userId) {
   // 지우는 하드삭제로 보여서, 소프트삭제+복구가 되려면 백엔드 쪽 설계 변경이 먼저 필요함.
   // await httpRequester.patch(`/users/${userId}/restore`)
   // loadUsers()
-  alert(`복구 API가 아직 백엔드에 없습니다. (userId: ${userId})`)
+  uiAlert.show(`복구 API가 아직 백엔드에 없습니다. (userId: ${userId})`)
 }
 </script>
 <template>
   <div>
+    <h2 style="margin-top:0;">계정 목록</h2>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
-      <router-link to="/settings/accounts/new">+ 계정 추가</router-link>
-      <router-link to="/settings/accounts/history">관리 이력</router-link>
+      <router-link class="btn" to="/settings/accounts/new">+ 계정 추가</router-link>
+      <router-link class="btn" to="/settings/accounts/history">관리 이력</router-link>
       <label
-        style="margin-left:16px;font-size:12.5px;color:#93A1BE;display:flex;align-items:center;gap:4px;"
+        style="margin-left:16px;font-size:12.5px;color:var(--color-text-muted);display:flex;align-items:center;gap:4px;"
         title="백엔드에 삭제 상태 조회 API가 아직 없어 비활성화되어 있습니다"
       >
         <input type="checkbox" v-model="showDeleted" disabled />삭제된 계정 보기
       </label>
-      <button style="margin-left:auto;" :disabled="!selected.length" @click="showDeleteConfirm = true">
+      <button class="btn btn-danger" style="margin-left:auto;" :disabled="!selected.length" @click="showDeleteConfirm = true">
         선택 계정 삭제
       </button>
     </div>
 
-    <p v-if="loading" style="color:#93A1BE;">불러오는 중...</p>
+    <p v-if="loading" style="color:var(--color-text-muted);">불러오는 중...</p>
     <table v-else style="width:100%;border-collapse:collapse;">
       <thead>
-        <tr style="text-align:left;border-bottom:1px solid #243452;">
+        <tr style="text-align:left;border-bottom:1px solid var(--color-border);">
           <th style="padding:8px;"><input type="checkbox" :checked="allSelected" @change="toggleSelectAll" /></th>
           <th style="padding:8px;">계정명</th>
           <th style="padding:8px;">역할</th>
@@ -87,19 +91,19 @@ async function restore(userId) {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="u in users" :key="u.userId" style="border-bottom:1px solid #243452;">
+        <tr v-for="u in users" :key="u.userId" style="border-bottom:1px solid var(--color-border);">
           <td style="padding:8px;"><input type="checkbox" v-model="selected" :value="u.userId" /></td>
           <td style="padding:8px;">{{ u.name }}</td>
           <td style="padding:8px;">{{ ROLE_LABEL[u.role] ?? u.role }}</td>
           <td style="padding:8px;">{{ (u.siteNames ?? []).join(', ') || '-' }}</td>
           <td style="padding:8px;">{{ formatLastLogin(u.lastLoginAt) }}</td>
           <td style="padding:8px;">
-            <button v-if="showDeleted" @click="restore(u.userId)">복구</button>
-            <router-link v-else :to="`/settings/accounts/${u.userId}`">수정</router-link>
+            <button v-if="showDeleted" class="btn" @click="restore(u.userId)">복구</button>
+            <router-link v-else class="btn" :to="`/settings/accounts/${u.userId}`">수정</router-link>
           </td>
         </tr>
         <tr v-if="!users.length">
-          <td colspan="6" style="padding:16px;text-align:center;color:#93A1BE;">계정이 없습니다.</td>
+          <td colspan="6" style="padding:16px;text-align:center;color:var(--color-text-muted);">계정이 없습니다.</td>
         </tr>
       </tbody>
     </table>
