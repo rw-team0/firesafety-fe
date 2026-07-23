@@ -20,6 +20,8 @@ const panelSiteByName = ref({})
 
 const filters = ref({ from: '', to: '', status: '', type: '', siteId: '' })
 const period = ref('') // '' | 'today' | '7d' | '30d' — AlertListReq엔 period 파라미터가 없어서 여기서 from/to로 환산해서 보냄
+const page = ref(0) // 0-base(AlertListReq 기준)
+const PAGE_SIZE = 13
 const keyword = ref('') // AlertListReq엔 자유검색 파라미터가 없어서 이미 불러온 목록을 클라이언트에서 필터링
 const appliedKeyword = ref('')
 
@@ -53,12 +55,34 @@ function applyPeriod() {
     filters.value.from = ''
     filters.value.to = ''
   }
-  load()
+  resetAndLoad()
 }
 
 function search() {
   appliedKeyword.value = keyword.value.trim()
 }
+
+// 필터 바뀌면 이전 필터 기준 페이지가 새 결과 범위를 벗어날 수 있어 0페이지부터 다시 조회
+function resetAndLoad() {
+  page.value = 0
+  load()
+}
+
+function goToPage(p) {
+  if (p < 0 || p >= totalPages.value) return
+  page.value = p
+  load()
+}
+
+const totalPages = computed(() => Math.max(1, Math.ceil(totalElements.value / PAGE_SIZE)))
+
+// 10개씩 묶어서 "1~10", "11~20" 페이지 번호 구간을 보여줌
+const PAGE_WINDOW = 10
+const pageNumbers = computed(() => {
+  const start = Math.floor(page.value / PAGE_WINDOW) * PAGE_WINDOW
+  const end = Math.min(start + PAGE_WINDOW, totalPages.value)
+  return Array.from({ length: end - start }, (_, i) => start + i)
+})
 
 const filteredAlerts = computed(() => {
   if (!appliedKeyword.value) return alerts.value
@@ -90,7 +114,7 @@ const pendingExport = ref(null) // 'all' | 'selected' | null — 와이어프레
 
 async function load() {
   loading.value = true
-  const params = {}
+  const params = { page: page.value, size: PAGE_SIZE }
   Object.entries(filters.value).forEach(([k, v]) => { if (v) params[k] = v })
   const res = await httpRequester.get('/alerts', { params }) // API-020
   alerts.value = res.data.resultData.content
@@ -169,13 +193,17 @@ onMounted(async () => {
         <option value="7d">최근 7일</option>
         <option value="30d">최근 30일</option>
       </select>
-      <select v-model="filters.siteId" class="field-input" style="margin-bottom:0;width:140px;" @change="load">
+      <select v-if="auth.role === 'SUPER_ADMIN'" v-model="filters.siteId" class="field-input" style="margin-bottom:0;width:140px;" @change="resetAndLoad">
         <option value="">전체 현장</option>
         <option v-for="s in sites" :key="s.siteId" :value="s.siteId">{{ s.name }}</option>
       </select>
-      <select v-model="filters.type" class="field-input" style="margin-bottom:0;width:140px;" @change="load">
+      <select v-model="filters.type" class="field-input" style="margin-bottom:0;width:140px;" @change="resetAndLoad">
         <option value="">전체 유형</option>
         <option v-for="(label, key) in TYPE_LABEL" :key="key" :value="key">{{ label }}</option>
+      </select>
+      <select v-model="filters.status" class="field-input" style="margin-bottom:0;width:120px;" @change="resetAndLoad">
+        <option value="">전체 상태</option>
+        <option v-for="(label, key) in STATUS_LABEL" :key="key" :value="key">{{ label }}</option>
       </select>
       <template v-if="canExport">
         <button class="btn" style="margin-left:auto;" @click="pendingExport = 'all'">전체 출력</button>
@@ -217,7 +245,20 @@ onMounted(async () => {
         </tr>
       </tbody>
     </table>
-    <p style="color:var(--color-text-muted);font-size:12px;">총 {{ totalElements }}건</p>
+    <p style="color:var(--color-text-muted);font-size:12px;margin:8px 0 0;">총 {{ totalElements }}건</p>
+    <div style="display:flex;justify-content:center;align-items:center;gap:4px;margin-top:10px;">
+      <button class="btn" :disabled="page === 0" @click="goToPage(0)">&laquo;</button>
+      <button class="btn" :disabled="page === 0" @click="goToPage(page - 1)">&lsaquo;</button>
+      <button
+        v-for="p in pageNumbers"
+        :key="p"
+        class="btn"
+        :style="p === page ? { background:'var(--color-accent)', color:'#fff' } : {}"
+        @click="goToPage(p)"
+      >{{ p + 1 }}</button>
+      <button class="btn" :disabled="page >= totalPages - 1" @click="goToPage(page + 1)">&rsaquo;</button>
+      <button class="btn" :disabled="page >= totalPages - 1" @click="goToPage(totalPages - 1)">&raquo;</button>
+    </div>
 
     <!-- 분전반 상세확인 팝업 -->
     <div v-if="detail" class="modal-overlay" @click.self="detail=null">
