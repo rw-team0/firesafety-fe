@@ -131,9 +131,10 @@ async function exportExcel(onlySelected) {
   if (onlySelected) params.alertIds = selected.value
   const res = await httpRequester.get('/alerts/export', { params, responseType: 'blob' }) // API-023
   const url = URL.createObjectURL(new Blob([res.data]))
+  const today = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
   const a = document.createElement('a')
   a.href = url
-  a.download = `alerts_${Date.now()}.xlsx`
+  a.download = `알림이력_${today}.xlsx`
   a.click()
   URL.revokeObjectURL(url)
 }
