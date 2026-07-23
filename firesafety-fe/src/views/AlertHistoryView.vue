@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
 import ConfirmModal from '../components/ConfirmModal.vue'
@@ -13,14 +13,80 @@ const totalElements = ref(0)
 const loading = ref(false)
 const selected = ref([])
 const canExport = auth.role === 'ADMIN' || auth.role === 'SUPER_ADMIN' // 관리자 이상만 출력(ALT-006)
+const sites = ref([])
+// AlertListRes엔 siteId/siteName 필드가 없어서(panelName만 있음, Swagger 확인) 현장명을 표로 보여주려면
+// /panels로 panelName→siteId 매핑을 만들어 이름 기반으로 붙여야 함 — panelName이 겹치면 부정확할 수 있음
+const panelSiteByName = ref({})
 
 const filters = ref({ from: '', to: '', status: '', type: '', siteId: '' })
+const period = ref('') // '' | 'today' | '7d' | '30d' — AlertListReq엔 period 파라미터가 없어서 여기서 from/to로 환산해서 보냄
+const keyword = ref('') // AlertListReq엔 자유검색 파라미터가 없어서 이미 불러온 목록을 클라이언트에서 필터링
+const appliedKeyword = ref('')
 
 const STATUS_LABEL = { UNCONFIRMED: '미확인', CONFIRMED: '확인됨', RESOLVED: '조치됨' }
 const STATUS_COLOR = { UNCONFIRMED: 'var(--color-danger)', CONFIRMED: 'var(--color-warning)', RESOLVED: 'var(--color-success)' }
+const TYPE_LABEL = { ARC: '아크', OVERHEAT: '과열', LEAKAGE: '누설', OVERCURRENT: '과전류', HUMIDITY: '습도', GAS: '가스', FIRE: '불꽃', DOOR_OPEN: '도어열림', DEVICE_ERROR: '장비오류', COMM_LOST: '통신두절' }
+
+function siteNameFor(panelName) {
+  return panelSiteByName.value[panelName] ?? '-'
+}
+
+function formatDateTime(v) {
+  return v ? v.replace('T', ' ') : '-'
+}
+
+function applyPeriod() {
+  const iso = (d) => d.toISOString().slice(0, 10)
+  const today = new Date()
+  if (period.value === 'today') {
+    filters.value.from = iso(today)
+    filters.value.to = iso(today)
+  } else if (period.value === '7d') {
+    const from = new Date(today); from.setDate(from.getDate() - 7)
+    filters.value.from = iso(from)
+    filters.value.to = iso(today)
+  } else if (period.value === '30d') {
+    const from = new Date(today); from.setDate(from.getDate() - 30)
+    filters.value.from = iso(from)
+    filters.value.to = iso(today)
+  } else {
+    filters.value.from = ''
+    filters.value.to = ''
+  }
+  load()
+}
+
+function search() {
+  appliedKeyword.value = keyword.value.trim()
+}
+
+const filteredAlerts = computed(() => {
+  if (!appliedKeyword.value) return alerts.value
+  const kw = appliedKeyword.value.toLowerCase()
+  return alerts.value.filter((a) =>
+    a.panelName?.toLowerCase().includes(kw) ||
+    siteNameFor(a.panelName).toLowerCase().includes(kw) ||
+    (TYPE_LABEL[a.type] ?? a.type).toLowerCase().includes(kw)
+  )
+})
+
+async function loadSitesAndPanels() {
+  const [sitesRes, panelsRes] = await Promise.all([
+    httpRequester.get('/sites'),
+    httpRequester.get('/panels'),
+  ])
+  sites.value = sitesRes.data.resultData
+  const siteNameById = Object.fromEntries(sites.value.map(s => [s.siteId, s.name]))
+  panelSiteByName.value = Object.fromEntries(
+    panelsRes.data.resultData.map(p => [p.name, siteNameById[p.siteId] ?? '-'])
+  )
+}
 
 const detail = ref(null) // 선택된 알림(상세확인 팝업)
-const pendingAction = ref(null) // { alertId, action: 'confirm'|'resolve' }
+const pendingAction = ref(null) // { alertId, action: 'confirm' }
+const resolveNoteMode = ref(false) // 조치완료는 선택 메모(resolutionNote, Swagger 확인) 입력을 받아서 바로 처리
+const resolutionNote = ref('')
+const pendingExport = ref(null) // 'all' | 'selected' | null — 와이어프레임 기준 출력 전 확인 팝업
 
 async function load() {
   loading.value = true
@@ -35,6 +101,8 @@ async function load() {
 
 function openDetail(alert) {
   detail.value = alert
+  resolveNoteMode.value = false
+  resolutionNote.value = ''
 }
 
 function requestAction(action) {
@@ -42,10 +110,17 @@ function requestAction(action) {
 }
 
 async function runAction() {
-  const { alertId, action } = pendingAction.value
-  const path = action === 'confirm' ? 'confirm' : 'resolve' // API-021 / API-022
-  await httpRequester.patch(`/alerts/${alertId}/${path}`)
+  await httpRequester.patch(`/alerts/${pendingAction.value.alertId}/confirm`) // Swagger 확인: PATCH /api/alerts/{alertId}/confirm
   pendingAction.value = null
+  detail.value = null
+  load()
+}
+
+async function submitResolve() {
+  const body = resolutionNote.value ? { resolutionNote: resolutionNote.value } : undefined
+  await httpRequester.patch(`/alerts/${detail.value.alertId}/resolve`, body) // Swagger 확인: AlertResolveReq
+  resolveNoteMode.value = false
+  resolutionNote.value = ''
   detail.value = null
   load()
 }
@@ -63,8 +138,14 @@ async function exportExcel(onlySelected) {
   URL.revokeObjectURL(url)
 }
 
+async function confirmExport() {
+  const onlySelected = pendingExport.value === 'selected'
+  pendingExport.value = null
+  await exportExcel(onlySelected)
+}
+
 onMounted(async () => {
-  await load()
+  await Promise.all([load(), loadSitesAndPanels()])
   // 대시보드에서 알림 클릭 시 넘어온 경우, 해당 알림 상세팝업 자동 오픈
   const targetId = route.query.alertId
   if (targetId) {
@@ -79,25 +160,25 @@ onMounted(async () => {
     <h2 style="margin-top:0;">알림 이력</h2>
 
     <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
-      <input v-model="filters.from" type="date" @change="load" />
-      <input v-model="filters.to" type="date" @change="load" />
-      <select v-model="filters.status" @change="load">
-        <option value="">전체 상태</option>
-        <option value="UNCONFIRMED">미확인</option>
-        <option value="CONFIRMED">확인됨</option>
-        <option value="RESOLVED">조치됨</option>
+      <input v-model="keyword" placeholder="현장/분전반/유형 검색" class="field-input" style="margin-bottom:0;width:180px;" @keyup.enter="search" />
+      <button class="btn" @click="search">검색</button>
+      <select v-model="period" class="field-input" style="margin-bottom:0;width:120px;" @change="applyPeriod">
+        <option value="">전체 기간</option>
+        <option value="today">오늘</option>
+        <option value="7d">최근 7일</option>
+        <option value="30d">최근 30일</option>
       </select>
-      <select v-model="filters.type" @change="load">
+      <select v-model="filters.siteId" class="field-input" style="margin-bottom:0;width:140px;" @change="load">
+        <option value="">전체 현장</option>
+        <option v-for="s in sites" :key="s.siteId" :value="s.siteId">{{ s.name }}</option>
+      </select>
+      <select v-model="filters.type" class="field-input" style="margin-bottom:0;width:140px;" @change="load">
         <option value="">전체 유형</option>
-        <option value="ARC">아크</option>
-        <option value="OVERHEAT">과열</option>
-        <option value="LEAKAGE">누설</option>
-        <option value="OVERCURRENT">과전류</option>
-        <option value="COMM_LOST">통신두절</option>
+        <option v-for="(label, key) in TYPE_LABEL" :key="key" :value="key">{{ label }}</option>
       </select>
       <template v-if="canExport">
-        <button class="btn" :disabled="!selected.length" @click="exportExcel(true)">선택 출력</button>
-        <button class="btn" @click="exportExcel(false)">전체 출력</button>
+        <button class="btn" style="margin-left:auto;" @click="pendingExport = 'all'">전체 출력</button>
+        <button class="btn" :disabled="!selected.length" @click="pendingExport = 'selected'">선택 출력</button>
       </template>
     </div>
 
@@ -106,30 +187,32 @@ onMounted(async () => {
       <thead>
         <tr style="text-align:left;border-bottom:1px solid var(--color-border);">
           <th v-if="canExport" style="padding:8px;"></th>
+          <th style="padding:8px;">발생일시</th>
+          <th style="padding:8px;">현장</th>
           <th style="padding:8px;">분전반</th>
           <th style="padding:8px;">회로</th>
           <th style="padding:8px;">유형</th>
           <th style="padding:8px;">상태</th>
-          <th style="padding:8px;">발생시각</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="a in alerts" :key="a.alertId" style="border-bottom:1px solid var(--color-border);cursor:pointer;">
+        <tr v-for="a in filteredAlerts" :key="a.alertId" style="border-bottom:1px solid var(--color-border);cursor:pointer;">
           <td v-if="canExport" style="padding:8px;" @click.stop>
             <input type="checkbox" v-model="selected" :value="a.alertId" />
           </td>
+          <td style="padding:8px;" @click="openDetail(a)">{{ formatDateTime(a.triggeredAt) }}</td>
+          <td style="padding:8px;" @click="openDetail(a)">{{ siteNameFor(a.panelName) }}</td>
           <td style="padding:8px;" @click="openDetail(a)">{{ a.panelName }}</td>
-          <td style="padding:8px;" @click="openDetail(a)">채널 {{ a.circuitNo }}</td>
-          <td style="padding:8px;" @click="openDetail(a)">{{ a.type }}</td>
+          <td style="padding:8px;" @click="openDetail(a)">{{ a.circuitNo != null ? `채널 ${a.circuitNo}` : '-' }}</td>
+          <td style="padding:8px;" @click="openDetail(a)">{{ TYPE_LABEL[a.type] ?? a.type }}</td>
           <td style="padding:8px;" @click="openDetail(a)">
             <span class="badge" :style="{ background: STATUS_COLOR[a.status] }">
               {{ STATUS_LABEL[a.status] ?? a.status }}
             </span>
           </td>
-          <td style="padding:8px;" @click="openDetail(a)">{{ a.triggeredAt }}</td>
         </tr>
-        <tr v-if="!alerts.length">
-          <td :colspan="canExport ? 6 : 5" style="padding:16px;text-align:center;color:var(--color-text-muted);">알림 이력이 없습니다.</td>
+        <tr v-if="!filteredAlerts.length">
+          <td :colspan="canExport ? 7 : 6" style="padding:16px;text-align:center;color:var(--color-text-muted);">알림 이력이 없습니다.</td>
         </tr>
       </tbody>
     </table>
@@ -142,21 +225,36 @@ onMounted(async () => {
           {{ detail.panelName }} 상세
         </div>
         <div class="modal-body">
-          <p>회로: 채널 {{ detail.circuitNo }}</p>
-          <p>유형: {{ detail.type }}</p>
+          <p>현장: {{ siteNameFor(detail.panelName) }}</p>
+          <p>회로: {{ detail.circuitNo != null ? `채널 ${detail.circuitNo}` : '-' }}</p>
+          <p>유형: {{ TYPE_LABEL[detail.type] ?? detail.type }}</p>
           <p>상태: {{ STATUS_LABEL[detail.status] ?? detail.status }}</p>
-          <p>발생시각: {{ detail.triggeredAt }}</p>
+          <p>발생시각: {{ formatDateTime(detail.triggeredAt) }}</p>
+
+          <template v-if="resolveNoteMode">
+            <label class="field-label">조치 메모(선택, 엑셀 비고란에 표시됨)</label>
+            <textarea v-model="resolutionNote" rows="3" class="field-input" placeholder="예: 케이블 재접속" maxlength="500"></textarea>
+          </template>
+
           <div class="modal-actions">
-            <button class="btn" @click="detail=null">닫기</button>
-            <button v-if="detail.status === 'UNCONFIRMED'" class="btn btn-primary" @click="requestAction('confirm')">확인 처리</button>
-            <button v-if="detail.status === 'CONFIRMED'" class="btn btn-primary" @click="requestAction('resolve')">조치 완료</button>
+            <template v-if="resolveNoteMode">
+              <button class="btn btn-primary" @click="submitResolve">조치 완료 저장</button>
+              <button class="btn" @click="resolveNoteMode=false">취소</button>
+            </template>
+            <template v-else>
+              <button v-if="detail.status === 'UNCONFIRMED'" class="btn btn-primary" @click="requestAction('confirm')">확인 처리</button>
+              <button v-if="detail.status === 'CONFIRMED'" class="btn btn-primary" @click="resolveNoteMode=true">조치 완료</button>
+              <button class="btn" @click="detail=null">닫기</button>
+            </template>
           </div>
         </div>
       </div>
     </div>
 
-    <ConfirmModal v-if="pendingAction" :title="pendingAction.action === 'confirm' ? '경보 확인' : '조치 완료'"
-      :message="pendingAction.action === 'confirm' ? '이 경보를 확인 처리하시겠습니까?' : '조치 완료로 처리하시겠습니까?'"
+    <ConfirmModal v-if="pendingAction" title="경보 확인" message="이 경보를 확인 처리하시겠습니까?"
       @confirm="runAction" @cancel="pendingAction=null" />
+    <ConfirmModal v-if="pendingExport" title="경보 이력 출력"
+      :message="pendingExport === 'selected' ? '선택된 로그를 엑셀 파일로 출력하시겠습니까?' : '모든 로그를 엑셀 파일로 출력하시겠습니까?'"
+      @confirm="confirmExport" @cancel="pendingExport=null" />
   </div>
 </template>

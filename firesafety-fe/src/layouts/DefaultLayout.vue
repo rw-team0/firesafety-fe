@@ -57,7 +57,8 @@ function doLogout(){
                 v-for="item in group.items.filter(isAllowed)"
                 :key="item.name"
                 :to="{ name: item.name }"
-                style="display:block;padding:8px;color:var(--color-text);text-decoration:none;border-radius:6px;"
+                class="sidebar-link"
+                style="display:block;padding:8px;text-decoration:none;border-radius:6px;"
               >{{ item.label }}</router-link>
             </div>
           </div>
@@ -71,3 +72,12 @@ function doLogout(){
       @confirm="doLogout" @cancel="showLogoutConfirm = false" />
   </div>
 </template>
+
+<style scoped>
+.sidebar-link { color: var(--color-text); }
+.sidebar-link.router-link-active {
+  background: var(--color-accent);
+  color: #fff;
+  font-weight: 700;
+}
+</style>

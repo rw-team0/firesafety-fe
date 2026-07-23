@@ -3,7 +3,6 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
 import { useAuthStore } from '../stores/auth'
-import ConfirmModal from '../components/ConfirmModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -15,7 +14,6 @@ const targetRole = ref(null)
 const sites = ref([])
 const loading = ref(true)
 const errorMsg = ref('')
-const showDeleteConfirm = ref(false)
 
 // FR-05-05: 대상이 ADMIN(현장관리자)이면 최고관리자만 수정 가능
 const forbidden = computed(() => targetRole.value === 'ADMIN' && auth.role !== 'SUPER_ADMIN')
@@ -42,9 +40,7 @@ async function save() {
   }
 }
 
-async function confirmRemove() {
-  if (forbidden.value) return
-  await httpRequester.delete(`/users/${userId}`) // API-006
+function cancel() {
   router.push('/settings/accounts')
 }
 </script>
@@ -68,20 +64,16 @@ async function confirmRemove() {
         <label class="field-label">역할</label>
         <select v-model="form.role" class="field-input"><option value="GENERAL">일반</option><option value="ADMIN">관리자</option></select>
 
-        <p class="field-label" style="margin-bottom:8px;">담당현장</p>
-        <label v-for="s in sites" :key="s.siteId" style="display:block;font-size:14px;color:var(--color-text);margin-bottom:4px;">
-          <input type="checkbox" v-model="form.siteIds" :value="s.siteId" />{{ s.name }}
-        </label>
+        <label class="field-label">담당현장 (Ctrl/Cmd+클릭으로 다중 선택)</label>
+        <select v-model="form.siteIds" multiple class="field-input" style="height:120px;">
+          <option v-for="s in sites" :key="s.siteId" :value="s.siteId">{{ s.name }}</option>
+        </select>
 
         <div style="display:flex;gap:8px;margin-top:16px;">
           <button class="btn btn-primary" @click="save">저장</button>
-          <button class="btn btn-danger" @click="showDeleteConfirm = true">삭제</button>
+          <button class="btn" @click="cancel">취소</button>
         </div>
       </fieldset>
     </div>
-
-    <ConfirmModal v-if="showDeleteConfirm" title="계정 삭제 확인"
-      message="정말로 이 계정을 삭제하시겠습니까?" danger
-      @confirm="confirmRemove" @cancel="showDeleteConfirm = false" />
   </div>
 </template>

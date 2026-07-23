@@ -9,10 +9,10 @@ const emit = defineEmits(['confirm', 'cancel'])
       <div class="modal-body">
         <p>{{ message }}</p>
         <div class="modal-actions">
-          <button class="btn" @click="$emit('cancel')">취소</button>
           <button class="btn" :class="danger ? 'btn-danger' : 'btn-primary'" @click="$emit('confirm')">
             {{ danger ? '삭제' : '확인' }}
           </button>
+          <button class="btn" @click="$emit('cancel')">취소</button>
         </div>
       </div>
     </div>
