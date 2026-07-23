@@ -132,6 +132,22 @@ async function load() {
   loading.value = false
 }
 
+// 체크박스로 선택한 알림 여러 건을 순차 처리(상태 전이 API는 단건만 있어서 개수만큼 순차 호출).
+// 상태가 안 맞는 항목(예: 이미 CONFIRMED인데 확인 처리 시도)은 백엔드가 409로 막고, 인터셉터가 에러를 띄운 뒤
+// 나머지 항목은 이어서 처리한다.
+async function runBulkAction() {
+  const action = pendingBulkAction.value
+  pendingBulkAction.value = null
+  for (const alertId of selected.value) {
+    try {
+      await httpRequester.patch(`/alerts/${alertId}/${action}`)
+    } catch (e) {
+      // 실패 토스트는 인터셉터가 이미 띄웠음 — 나머지 선택 항목은 계속 처리
+    }
+  }
+  load()
+}
+
 function openDetail(alert) {
   detail.value = alert
   resolveNoteMode.value = false
@@ -215,8 +231,10 @@ onMounted(async () => {
         <option v-for="(label, key) in STATUS_LABEL" :key="key" :value="key">{{ label }}</option>
       </select>
       <template v-if="canExport">
-        <button class="btn" style="margin-left:auto;" @click="pendingExport = 'all'">전체 출력</button>
-        <button class="btn" :disabled="!selected.length" @click="pendingExport = 'selected'">선택 출력</button>
+        <button class="btn" style="margin-left:auto;" :disabled="!selected.length" @click="pendingBulkAction = 'confirm'">확인</button>
+        <button class="btn" :disabled="!selected.length" @click="pendingBulkAction = 'resolve'">조치</button>
+        <button class="btn" :disabled="!selected.length" @click="pendingExport = 'selected'">출력</button>
+        <button class="btn" @click="pendingExport = 'all'">전체출력</button>
       </template>
     </div>
 
@@ -307,5 +325,9 @@ onMounted(async () => {
     <ConfirmModal v-if="pendingExport" title="경보 이력 출력"
       :message="pendingExport === 'selected' ? '선택된 로그를 엑셀 파일로 출력하시겠습니까?' : '모든 로그를 엑셀 파일로 출력하시겠습니까?'"
       @confirm="confirmExport" @cancel="pendingExport=null" />
+    <ConfirmModal v-if="pendingBulkAction" title="선택 항목 일괄 처리"
+      :message="`선택한 ${selected.length}건을 ${pendingBulkAction === 'confirm' ? '확인 처리' : '조치 완료'}하시겠습니까?`"
+      note="(상태가 안 맞는 항목은 처리되지 않습니다.)"
+      @confirm="runBulkAction" @cancel="pendingBulkAction=null" />
   </div>
 </template>
