@@ -14,7 +14,9 @@ const auth = useAuthStore()
 const route = useRoute()
 // 설비 목록(EquipmentListView)의 "설비 추가"에서 ?tab=panels로 넘어오면 분전반관리 탭이 바로 열리도록
 const validTabs = ['sites', 'panels', 'circuits']
-const tab = ref(validTabs.includes(route.query.tab) ? route.query.tab : 'sites')
+// ADMIN은 현장관리 탭 자체가 없어서(현장 등록은 SUPER_ADMIN 전용) 기본 탭도 분전반관리로 시작해야 함
+const defaultTab = auth.role === 'SUPER_ADMIN' ? 'sites' : 'panels'
+const tab = ref(validTabs.includes(route.query.tab) ? route.query.tab : defaultTab)
 
 const sites = ref([])
 async function loadSites() {
@@ -170,6 +172,15 @@ async function confirmPanelBulkDelete() {
 
 // ── 회로 관리(분전반 선택 → 채널 슬롯 그리드. 등록된 채널은 카드+체크박스, 빈 채널은 "+슬롯추가".
 //    수정 API는 없어서(Swagger 확인) 조회/등록/삭제만 가능. 와이어프레임 기준 재구성) ──
+// SUPER_ADMIN은 전체 현장의 분전반이 한 드롭다운에 다 섞여 나와서, 현장으로 먼저 좁힐 수 있게 필터 추가
+const circuitSiteId = ref('')
+const circuitPanelsFiltered = computed(() =>
+  circuitSiteId.value ? allPanels.value.filter(p => p.siteId === circuitSiteId.value) : allPanels.value
+)
+function onCircuitSiteChange() {
+  circuitPanelId.value = circuitPanelsFiltered.value[0]?.panelId ?? null
+}
+
 const circuitPanelId = ref(null)
 const circuits = ref([])
 const circuitPanelCircuitCount = ref(0)
@@ -393,9 +404,16 @@ onMounted(async () => {
          수정 API는 없어서(Swagger 확인) 조회/등록/삭제만 가능 -->
     <div v-if="tab==='circuits'">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+        <template v-if="auth.role === 'SUPER_ADMIN'">
+          <label class="field-label" style="margin-bottom:0;">현장 선택</label>
+          <select v-model="circuitSiteId" class="field-input" style="margin-bottom:0;width:160px;" @change="onCircuitSiteChange">
+            <option value="">전체 현장</option>
+            <option v-for="s in sites" :key="s.siteId" :value="s.siteId">{{ s.name }}</option>
+          </select>
+        </template>
         <label class="field-label" style="margin-bottom:0;">분전반 선택</label>
         <select v-model="circuitPanelId" class="field-input" style="margin-bottom:0;width:220px;">
-          <option v-for="p in allPanels" :key="p.panelId" :value="p.panelId">{{ p.name }}</option>
+          <option v-for="p in circuitPanelsFiltered" :key="p.panelId" :value="p.panelId">{{ p.name }}</option>
         </select>
         <button class="btn btn-danger" style="margin-left:auto;" :disabled="!selectedCircuitIds.length" @click="showCircuitBulkDeleteConfirm = true">선택 삭제</button>
       </div>
