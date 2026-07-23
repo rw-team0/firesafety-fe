@@ -15,6 +15,7 @@ import CircuitRegisterView from '@/views/CircuitRegisterView.vue'
 import EquipmentListView from '@/views/EquipmentListView.vue'
 import EquipmentDetailView from '@/views/EquipmentDetailView.vue'
 import FacilityManageView from '@/views/FacilityManageView.vue'
+import FacilityAuditHistoryView from '@/views/FacilityAuditHistoryView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import AlertHistoryView from '@/views/AlertHistoryView.vue'
 import StatisticsView from '@/views/StatisticsView.vue'
@@ -36,6 +37,7 @@ const webRoutes = {
     { path: 'settings/panels', name: 'panel-register', component: PanelRegisterView, meta: { requiredRole: 'ADMIN' } },
     { path: 'settings/circuits', name: 'circuit-register', component: CircuitRegisterView, meta: { requiredRole: 'ADMIN' } },
     { path: 'settings/facilities', name: 'facility-manage', component: FacilityManageView, meta: { requiredRole: 'ADMIN' } },
+    { path: 'settings/facilities/history', name: 'facility-audit-history', component: FacilityAuditHistoryView, meta: { requiredRole: 'SUPER_ADMIN' } },
     { path: 'settings/site-assignment', name: 'site-assignment', component: SiteAssignmentView, meta: { requiredRole: 'ADMIN' } },
     { path: 'settings/accounts', name: 'account-list', component: AccountListView, meta: { requiredRole: 'SUPER_ADMIN' } },
     { path: 'settings/accounts/new', name: 'account-add', component: AccountAddView, meta: { requiredRole: 'ADMIN' } },

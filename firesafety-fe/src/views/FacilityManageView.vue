@@ -230,6 +230,7 @@ onMounted(async () => {
       <button v-if="auth.role === 'SUPER_ADMIN'" class="btn" :class="{ 'btn-primary': tab==='sites' }" @click="tab='sites'">현장관리</button>
       <button class="btn" :class="{ 'btn-primary': tab==='panels' }" @click="tab='panels'">분전반관리</button>
       <button class="btn" :class="{ 'btn-primary': tab==='circuits' }" @click="tab='circuits'">회로관리</button>
+      <router-link v-if="auth.role === 'SUPER_ADMIN'" class="btn" to="/settings/facilities/history" style="margin-left:auto;">관리 이력</router-link>
     </div>
 
     <!-- 현장관리: 좌 등록/수정폼 + 우 목록(선택삭제) — 분전반관리와 동일 패턴, 와이어프레임 기준 -->
