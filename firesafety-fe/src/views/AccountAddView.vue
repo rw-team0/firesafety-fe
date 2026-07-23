@@ -29,12 +29,13 @@ function onEmailInput() {
 }
 
 async function checkEmail() {
-  // TODO: 이메일 중복확인 전용 API가 백엔드 명세에 없음. EMAIL_DUPLICATE(400)는
-  // API-004(계정 등록) 제출 시점에만 내려오는 에러코드라, 지금은 제출 전 사전 확인이 불가능함.
-  // 전용 API(예: GET /users/check-email?email=)가 추가되면 아래로 교체:
-  // const res = await httpRequester.get('/users/check-email', { params: { email: form.value.email } })
-  // emailAvailable.value = !res.data.resultData.duplicate
-  uiAlert.show('이메일 중복확인 API가 아직 백엔드에 없습니다. 등록 시 중복이면 오류로 안내됩니다.')
+  if (!form.value.email) {
+    uiAlert.show('이메일을 입력해주세요.')
+    return
+  }
+  const res = await httpRequester.get('/users/check-email', { params: { email: form.value.email } })
+  emailAvailable.value = !res.data.resultData.duplicate
+  emailChecked.value = true
 }
 
 async function submit() {

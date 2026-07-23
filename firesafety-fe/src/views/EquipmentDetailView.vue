@@ -1,77 +1,92 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
+import { createMonitoringSocket } from '../utils/monitoringSocket'
+import { useAuthStore } from '../stores/auth'
 
 const route = useRoute()
+const auth = useAuthStore()
+const panelId = route.params.panelId // 고정값으로 한 번만 읽는다 — WS/폴링 콜백이 매번 route를 다시 읽으면
+// 다른 페이지로 이동한 뒤 뒤늦게 도착한 메시지가 그 시점의(이미 사라진) params를 읽어 /panels/undefined를 호출하게 됨
 const panel = ref(null)
 const siteName = ref('-')
-const circuits = ref([]) // 각 항목에 최신 AI 진단결과(diagnosis)를 붙여서 보관
-const recentAlerts = ref([])
 const loading = ref(true)
+let socket = null
+let pollTimer = null
+let active = true // 언마운트 후 뒤늦게 도착한 콜백이 API를 호출/상태를 갱신하지 않도록 막는 가드
 
-// 실제 백엔드 Swagger(192.168.0.31:8080/swagger-ui, 2026-07-23 확인) 결과:
-// PanelDetailRes엔 전류/전압/전력/도어/온습도/가스·화재 raw값이 전혀 없고(실시간 텔레메트리는 REST로 노출 안 됨),
-// 대신 서버 주의(CAUTION) 임계값 6종(leakMaThreshold 등)과 상태/통신정보만 내려옴.
-// 회로도 currentA/아크횟수 같은 필드가 없고, AI 판정은 별도 GET /circuits/{id}/diagnosis에서
-// 이진분류(NORMAL/ARC) 이력으로만 제공됨 — 와이어프레임의 전체전류/전압/전력/도어/환경센서/회로별 전류값·아크횟수는
-// 실제 API에 없는 값이라 반영하지 않았고, 대신 회로 타일 색상을 최신 AI 판정으로 표시함
+// 실제 백엔드 GET /api/panels/{panelId} (2026-07-24 확장) 기준: 최신 전류/전압/전력/도어/온습도/가스·불꽃
+// raw값과 회로별 상태(circuits)까지 한 번에 내려옴 — 회로별 status는
+// 백엔드 PanelService.resolveCircuitStatus 매트릭스로 이미 계산되어 오므로 프론트는 그대로 표시만 한다.
 const STATUS_LABEL = { NORMAL: '정상', CAUTION: '주의', RISK: '위험', OFFLINE: '오프라인' }
 const STATUS_COLOR = { NORMAL: 'var(--color-success)', CAUTION: 'var(--color-warning)', RISK: 'var(--color-danger)', OFFLINE: 'var(--color-offline)' }
-const VERDICT_LABEL = { NORMAL: '정상', ARC: '아크' }
-const ALERT_STATUS_LABEL = { UNCONFIRMED: '미확인', CONFIRMED: '확인됨', RESOLVED: '조치됨' }
-const ALERT_STATUS_COLOR = { UNCONFIRMED: 'var(--color-danger)', CONFIRMED: 'var(--color-warning)', RESOLVED: 'var(--color-success)' }
 
 function formatDateTime(v) {
   return v ? v.replace('T', ' ') : '-'
 }
-function formatRelative(iso) {
-  if (!iso) return '-'
-  const sec = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
-  if (sec < 60) return `${Math.max(sec, 0)}초 전`
-  const min = Math.floor(sec / 60)
-  if (min < 60) return `${min}분 전`
-  const hour = Math.floor(min / 60)
-  if (hour < 24) return `${hour}시간 전`
-  return `${Math.floor(hour / 24)}일 전`
+
+function circuitCardStyle(status) {
+  if (!status || status === 'NORMAL') return {}
+  return { background: STATUS_COLOR[status] ?? 'var(--color-offline)', color: status === 'CAUTION' ? '#000' : '#fff', borderColor: 'transparent' }
 }
-function slotColor(c) {
-  if (!c.latestDiagnosis) return 'var(--color-offline)'
-  return c.latestDiagnosis.verdict === 'ARC' ? 'var(--color-danger)' : '#fff'
+
+// 항목별 raw값 vs 서버 주의 임계값 직접 비교(프론트 계산). 백엔드의 "30초 지속" 공식 CAUTION 판정과는
+// 별개라 순간적으로 안 맞을 수 있음 — 그래도 각 카드에서 뭐가 임계치를 넘었는지 바로 보여주려고 추가함
+function thresholdCardStyle(value, threshold) {
+  if (value == null || threshold == null || Number(value) < Number(threshold)) return {}
+  return { background: 'var(--color-warning)', color: '#000', borderColor: 'transparent' }
 }
-function slotTextColor(c) {
-  return (!c.latestDiagnosis || c.latestDiagnosis.verdict === 'ARC') ? '#fff' : 'var(--color-text)'
+
+function doorCardStyle(doorStatus) {
+  if (!doorStatus) return {}
+  return { background: 'var(--color-danger)', color: '#fff', borderColor: 'transparent' }
 }
 
 async function load() {
-  loading.value = true
-  const panelId = route.params.panelId
-  const [panelRes, sitesRes, circuitsRes] = await Promise.all([
+  if (!active) return
+  const [panelRes, sitesRes] = await Promise.all([
     httpRequester.get(`/panels/${panelId}`),
     httpRequester.get('/sites'),
-    httpRequester.get(`/panels/${panelId}/circuits`),
   ])
+  if (!active) return
   panel.value = panelRes.data.resultData
   siteName.value = sitesRes.data.resultData.find(s => s.siteId === panel.value.siteId)?.name ?? '-'
-
-  circuits.value = await Promise.all(circuitsRes.data.resultData.map(async (c) => {
-    const diagRes = await httpRequester.get(`/circuits/${c.circuitId}/diagnosis`, { params: { page: 0, size: 1 } })
-    const latest = diagRes.data.resultData.content?.[0] ?? null
-    return { ...c, latestDiagnosis: latest }
-  }))
-
-  // 이 분전반의 최근 알림 — AlertListReq엔 panelId 필터가 없어서(siteId만 지원, Swagger 확인)
-  // 같은 현장 알림을 가져와 panelName으로 클라이언트에서 필터링
-  const alertsRes = await httpRequester.get('/alerts', { params: { siteId: panel.value.siteId, size: 20 } })
-  recentAlerts.value = alertsRes.data.resultData.content
-    .filter((a) => a.panelName === panel.value.name)
-    .slice(0, 5)
-
-  loading.value = false
 }
-onMounted(load)
 
-// ── 임계값 설정(수정) — 설비관리 > 분전반관리 목록의 "수정" 기능이 여기로 이관됨 ──
+function startPolling() {
+  if (pollTimer) return
+  pollTimer = setInterval(load, 5000)
+}
+function stopPolling() {
+  clearInterval(pollTimer)
+  pollTimer = null
+}
+
+onMounted(async () => {
+  loading.value = true
+  await load()
+  loading.value = false
+
+  // 대시보드와 동일한 원칙: SUPER_ADMIN은 이 topic을 안 써서 폴링만, ADMIN/GENERAL은 소속 현장 topic 구독
+  if (auth.role === 'SUPER_ADMIN') {
+    startPolling()
+    return
+  }
+  socket = createMonitoringSocket({
+    siteIds: [panel.value.siteId],
+    onMessage: load,
+    onConnect: stopPolling,
+    onDisconnect: startPolling,
+  })
+})
+onBeforeUnmount(() => {
+  active = false
+  socket?.deactivate()
+  stopPolling()
+})
+
+// ── 임계값 설정(수정) — 설비관리 > 분전반관리 목록의 "수정" 기능을 여기서도 바로 할 수 있게 함 ──
 const showEditModal = ref(false)
 const editForm = ref({})
 const editSubmitting = ref(false)
@@ -96,7 +111,7 @@ async function saveEdit() {
   }
   editSubmitting.value = true
   try {
-    await httpRequester.put(`/panels/${route.params.panelId}`, editForm.value)
+    await httpRequester.put(`/panels/${panelId}`, editForm.value)
     showEditModal.value = false
     await load()
   } catch (e) {
@@ -115,89 +130,80 @@ async function saveEdit() {
       <button class="btn btn-primary" style="margin-left:auto;" @click="openEdit">임계값 설정</button>
     </div>
 
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
       <span style="font-size:18px;font-weight:700;">{{ panel.name }}</span>
       <span class="badge" :style="{ background: STATUS_COLOR[panel.status] }">{{ STATUS_LABEL[panel.status] ?? panel.status }}</span>
       <span style="font-size:12px;color:var(--color-text-muted);">{{ panel.isOnline ? '통신 정상' : '통신두절' }} · 최근 통신 {{ formatDateTime(panel.lastCommunicatedAt) }}</span>
     </div>
 
-    <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
-      <div class="card" style="padding:12px 16px;">
-        <div style="font-size:12px;color:var(--color-text-muted);">소속 현장</div>
-        <div style="font-size:16px;font-weight:700;">{{ siteName }}</div>
-      </div>
-      <div class="card" style="padding:12px 16px;">
-        <div style="font-size:12px;color:var(--color-text-muted);">일련번호</div>
-        <div style="font-size:16px;font-weight:700;">{{ panel.deviceSerial }}</div>
-      </div>
-      <div class="card" style="padding:12px 16px;">
-        <div style="font-size:12px;color:var(--color-text-muted);">장비번호</div>
-        <div style="font-size:16px;font-weight:700;">{{ panel.mNo || '-' }}</div>
-      </div>
-      <div class="card" style="padding:12px 16px;">
-        <div style="font-size:12px;color:var(--color-text-muted);">설치일</div>
-        <div style="font-size:16px;font-weight:700;">{{ panel.installedAt || '-' }}</div>
-      </div>
-      <div class="card" style="padding:12px 16px;">
-        <div style="font-size:12px;color:var(--color-text-muted);">회로 개수</div>
-        <div style="font-size:16px;font-weight:700;">{{ panel.circuitCount }}</div>
-      </div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;padding:8px 14px;border:1px solid var(--color-border);border-radius:8px;font-size:13px;">
+      <span><span style="color:var(--color-text-muted);">소속 현장</span> {{ siteName }}</span>
+      <span><span style="color:var(--color-text-muted);">일련번호</span> {{ panel.deviceSerial }}</span>
+      <span><span style="color:var(--color-text-muted);">장비번호</span> {{ panel.mNo || '-' }}</span>
+      <span><span style="color:var(--color-text-muted);">설치일</span> {{ panel.installedAt || '-' }}</span>
+      <span><span style="color:var(--color-text-muted);">회로 개수</span> {{ panel.circuitCount }}</span>
     </div>
 
-    <h3>환경 임계값(서버 주의 기준값)</h3>
-    <div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap;">
-      <div class="card" style="padding:10px 14px;">
-        <div style="font-size:11px;color:var(--color-text-muted);">zct 누설전류</div>
-        <div style="font-size:15px;font-weight:700;">{{ panel.leakMaThreshold ?? '-' }} mA</div>
+    <div style="display:flex;align-items:baseline;gap:8px;">
+      <h3 style="margin-bottom:8px;">주의 임계값</h3>
+      <span style="font-size:12px;color:var(--color-text-muted);">값 수정은 우측 상단 "임계값 설정" 또는 설비 관리 &gt; 분전반 관리에서 할 수 있습니다.</span>
+    </div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;padding:8px 14px;border:1px solid var(--color-border);border-radius:8px;margin-bottom:24px;font-size:13px;">
+      <span><span style="color:var(--color-text-muted);">zct 누설전류</span> {{ panel.leakMaThreshold ?? '-' }} mA</span>
+      <span><span style="color:var(--color-text-muted);">온도</span> {{ panel.tempThreshold ?? '-' }} 도</span>
+      <span><span style="color:var(--color-text-muted);">습도</span> {{ panel.humidityThreshold ?? '-' }} %</span>
+      <span><span style="color:var(--color-text-muted);">과전류</span> {{ panel.overcurrentThreshold ?? '-' }} A</span>
+      <span><span style="color:var(--color-text-muted);">가스</span> {{ panel.gasThreshold ?? '-' }}</span>
+      <span><span style="color:var(--color-text-muted);">불꽃</span> {{ panel.fireThreshold ?? '-' }}</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;">
+      <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...thresholdCardStyle(panel.totalCurrent, panel.overcurrentThreshold) }">
+        <div style="font-size:12px;color:var(--color-text-muted);">전체전류</div>
+        <div style="font-size:16px;font-weight:700;">{{ panel.totalCurrent != null ? panel.totalCurrent + 'A' : '-' }}</div>
       </div>
-      <div class="card" style="padding:10px 14px;">
-        <div style="font-size:11px;color:var(--color-text-muted);">온도</div>
-        <div style="font-size:15px;font-weight:700;">{{ panel.tempThreshold ?? '-' }} 도</div>
+      <div class="card" style="padding:12px 14px;height:87px;box-sizing:border-box;">
+        <div style="font-size:12px;color:var(--color-text-muted);">전압</div>
+        <div style="font-size:16px;font-weight:700;">{{ panel.voltV != null ? panel.voltV + 'V' : '-' }}</div>
       </div>
-      <div class="card" style="padding:10px 14px;">
-        <div style="font-size:11px;color:var(--color-text-muted);">습도</div>
-        <div style="font-size:15px;font-weight:700;">{{ panel.humidityThreshold ?? '-' }} %</div>
+      <div class="card" style="padding:12px 14px;height:87px;box-sizing:border-box;">
+        <div style="font-size:12px;color:var(--color-text-muted);">전체전력</div>
+        <div style="font-size:16px;font-weight:700;">{{ panel.totalPower != null ? panel.totalPower + 'W' : '-' }}</div>
       </div>
-      <div class="card" style="padding:10px 14px;">
-        <div style="font-size:11px;color:var(--color-text-muted);">과전류</div>
-        <div style="font-size:15px;font-weight:700;">{{ panel.overcurrentThreshold ?? '-' }} A</div>
-      </div>
-      <div class="card" style="padding:10px 14px;">
-        <div style="font-size:11px;color:var(--color-text-muted);">가스</div>
-        <div style="font-size:15px;font-weight:700;">{{ panel.gasThreshold ?? '-' }}</div>
-      </div>
-      <div class="card" style="padding:10px 14px;">
-        <div style="font-size:11px;color:var(--color-text-muted);">불꽃</div>
-        <div style="font-size:15px;font-weight:700;">{{ panel.fireThreshold ?? '-' }}</div>
+      <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...doorCardStyle(panel.doorStatus) }">
+        <div style="font-size:12px;color:var(--color-text-muted);">도어</div>
+        <div style="font-size:16px;font-weight:700;">{{ panel.doorStatus == null ? '-' : (panel.doorStatus ? '열림' : '닫힘') }}</div>
       </div>
     </div>
 
     <h3>회로 목록</h3>
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:24px;">
-      <div
-        v-for="c in circuits" :key="c.circuitId" class="card"
-        :style="{ padding:'14px', textAlign:'center', background: slotColor(c), color: slotTextColor(c) }"
-      >
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;">
+      <div v-for="c in panel.circuits" :key="c.circuitId" class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...circuitCardStyle(c.status) }">
         <div style="font-weight:700;">회로 {{ c.channelNo }}</div>
-        <div style="font-size:11px;opacity:.85;">{{ c.loadType || '-' }}</div>
-        <div style="font-size:11px;margin-top:4px;">
-          {{ c.latestDiagnosis ? (VERDICT_LABEL[c.latestDiagnosis.verdict] ?? c.latestDiagnosis.verdict) : '판정 이력 없음' }}
-        </div>
+        <div style="font-size:15px;font-weight:700;">{{ c.currentA != null ? c.currentA + 'A' : '-' }}</div>
+        <div style="font-size:11px;opacity:.85;">아크 {{ c.arcCounter ?? 0 }}회</div>
       </div>
-      <p v-if="!circuits.length" style="color:var(--color-text-muted);grid-column:1 / -1;">등록된 회로가 없습니다.</p>
+      <p v-if="!panel.circuits?.length" style="color:var(--color-text-muted);">등록된 회로가 없습니다.</p>
     </div>
 
-    <h3>최근 알림</h3>
-    <div>
-      <div
-        v-for="a in recentAlerts" :key="a.alertId" class="card"
-        style="display:flex;align-items:center;gap:12px;padding:10px 12px;margin-bottom:6px;"
-      >
-        <span class="badge" :style="{ background: ALERT_STATUS_COLOR[a.status] }">{{ ALERT_STATUS_LABEL[a.status] ?? a.status }}</span>
-        <span style="flex:1;">{{ a.type }}</span>
-        <span style="font-size:11px;color:var(--color-text-muted);">{{ formatRelative(a.triggeredAt) }}</span>
+    <h3>환경</h3>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;">
+      <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...thresholdCardStyle(panel.temperature, panel.tempThreshold) }">
+        <div style="font-size:12px;color:var(--color-text-muted);">온도</div>
+        <div style="font-size:16px;font-weight:700;">{{ panel.temperature != null ? panel.temperature + '°C' : '-' }}</div>
       </div>
-      <p v-if="!recentAlerts.length" style="color:var(--color-text-muted);">최근 알림이 없습니다.</p>
+      <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...thresholdCardStyle(panel.humidity, panel.humidityThreshold) }">
+        <div style="font-size:12px;color:var(--color-text-muted);">습도</div>
+        <div style="font-size:16px;font-weight:700;">{{ panel.humidity != null ? panel.humidity + '%' : '-' }}</div>
+      </div>
+      <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...thresholdCardStyle(panel.fireRaw, panel.fireThreshold) }">
+        <div style="font-size:12px;color:var(--color-text-muted);">불꽃센서</div>
+        <div style="font-size:16px;font-weight:700;">{{ panel.fireRaw ?? '-' }}</div>
+      </div>
+      <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...thresholdCardStyle(panel.gasRaw, panel.gasThreshold) }">
+        <div style="font-size:12px;color:var(--color-text-muted);">가스센서</div>
+        <div style="font-size:16px;font-weight:700;">{{ panel.gasRaw ?? '-' }}</div>
+      </div>
     </div>
 
     <!-- 임계값 설정(수정) 모달 -->

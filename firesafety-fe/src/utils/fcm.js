@@ -23,7 +23,12 @@ export async function registerFcmToken() {
 
   const app = initializeApp(firebaseConfig)
   const messaging = getMessaging(app)
-  const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js')
+  // vite-plugin-pwa가 등록하는 sw.js도 기본 scope('/')를 쓰는데, 같은 scope에 서비스워커를 또 등록하면
+  // 나중에 등록된 쪽이 앞의 등록을 덮어써버림(Service Worker 스펙상 scope당 하나만 활성화됨) — Firebase
+  // 공식 가이드대로 별도 scope를 줘서 PWA 서비스워커와 안 부딪히게 함
+  const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+    scope: '/firebase-cloud-messaging-push-scope',
+  })
   const fcmToken = await getToken(messaging, {
     vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
     serviceWorkerRegistration: registration,

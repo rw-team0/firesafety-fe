@@ -1,5 +1,5 @@
 <script setup>
-defineProps({ title: String, message: String, danger: { type: Boolean, default: false } })
+defineProps({ title: String, message: String, note: { type: String, default: '' }, danger: { type: Boolean, default: false } })
 const emit = defineEmits(['confirm', 'cancel'])
 </script>
 <template>
@@ -7,7 +7,8 @@ const emit = defineEmits(['confirm', 'cancel'])
     <div class="modal-panel">
       <div class="modal-header" :class="{ danger }">{{ title }}</div>
       <div class="modal-body">
-        <p>{{ message }}</p>
+        <p :style="{ color: 'var(--color-text)', margin: note ? '0 0 6px' : '0 0 16px' }">{{ message }}</p>
+        <p v-if="note" style="margin:0 0 16px;">{{ note }}</p>
         <div class="modal-actions">
           <button class="btn" :class="danger ? 'btn-danger' : 'btn-primary'" @click="$emit('confirm')">
             {{ danger ? '삭제' : '확인' }}

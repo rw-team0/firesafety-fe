@@ -14,6 +14,17 @@ dist-ssr
 coverage
 *.local
 
+# 실제 값(Firebase API key/VAPID key 등)이 들어가는 환경파일은 커밋하지 않는다.
+# .env.example/.env.mock은 비밀값이 없어서 예외로 추적한다.
+.env
+.env.production
+.env.*
+!.env.example
+!.env.mock
+
+# 빌드 시 자동 생성 — .env 값이 포함되므로 커밋하지 않는다
+public/firebase-messaging-sw.js
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

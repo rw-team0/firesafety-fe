@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ROLE_RANK } from '../constants/roles'
 import { useAuthStore } from '../stores/auth'
 import { useMonitoringStore } from '../stores/monitoring'
@@ -13,13 +13,22 @@ const sidebarOpen = ref(true)  // 기본 열림 (레퍼런스 기준)
 const showLogoutConfirm = ref(false)
 function toggleSidebar() { sidebarOpen.value = !sidebarOpen.value }
 
+// 레이아웃은 로그인 세션 내내 떠있어서(자식 화면만 바뀜) 위험 감지를 여기서 한 번만 시작 —
+// 어느 화면(알림이력/설비목록/통계 등)에 있든 위험 팝업/경보음이 뜨게 하려는 목적
+onMounted(() => monitoring.start())
+
+function goToPanel(panelId) {
+  monitoring.clearRiskPopup()
+  router.push(`/equipment/${panelId}`)
+}
+
 const navGroups = [
   { title:'관제', items:[
     { name:'dashboard', label:'대시보드', minRole:'GENERAL' },
     { name:'equipment-list', label:'설비 목록', minRole:'GENERAL' },
     { name:'alerts', label:'알림 이력', minRole:'GENERAL' },
   ]},
-  { title:'통계', items:[{ name:'statistics', label:'통계/리포트', minRole:'GENERAL' }] },
+  { title:'통계', items:[{ name:'statistics', label:'통계', minRole:'GENERAL' }] },
   { title:'관리', items:[
     { name:'facility-manage', label:'설비 관리', minRole:'ADMIN' },
     { name:'account-list', label:'계정 관리', minRole:'SUPER_ADMIN' },
@@ -37,7 +46,8 @@ function doLogout(){
     <!-- 헤더: 항상 전체 폭, 통신상태·미확인알림·로그아웃 표시 -->
     <header style="padding:10px 16px;border-bottom:1px solid var(--color-border);display:flex;align-items:center;gap:14px;flex:none;">
       <button class="btn" @click="toggleSidebar" aria-label="메뉴">☰</button>
-      <span>FireSafety</span>
+      <img src="/arcguard.png" alt="ArcGuard" style="width:24px;height:24px;border-radius:4px;" />
+      <span style="font-weight:700;">ArcGuard</span>
       <span :style="{ color: monitoring.wsConnected ? 'var(--color-success)' : 'var(--color-offline)', fontSize:'12px' }">
         통신상태: {{ monitoring.wsConnected ? '정상' : '두절' }}
       </span>
@@ -64,12 +74,26 @@ function doLogout(){
           </div>
         </div>
       </aside>
-      <main style="flex:1;min-width:0;overflow-y:auto;padding:22px;"><router-view /></main>
+      <main style="flex:1;min-width:0;overflow-y:auto;padding:22px;"><router-view :key="$route.fullPath" /></main>
     </div>
 
     <ConfirmModal v-if="showLogoutConfirm" title="로그아웃"
       message="로그아웃 하시겠습니까?"
       @confirm="doLogout" @cancel="showLogoutConfirm = false" />
+
+    <!-- 위험 등급 전환 팝업(프론트가이드 7.5절). 레이아웃에 있어서 어느 화면에 있든 뜬다 -->
+    <div v-if="monitoring.riskPopup" class="modal-overlay" @click.self="monitoring.clearRiskPopup()">
+      <div class="modal-panel">
+        <div class="modal-header danger">위험 발생</div>
+        <div class="modal-body">
+          <p>{{ monitoring.riskPopup.panelName }}에서 위험 상태가 감지되었습니다.</p>
+          <div class="modal-actions">
+            <button class="btn btn-primary" @click="goToPanel(monitoring.riskPopup.panelId)">상세보기</button>
+            <button class="btn" @click="monitoring.clearRiskPopup()">닫기</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
