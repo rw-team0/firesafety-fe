@@ -1,6 +1,9 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import httpRequester from '../utils/httpRequester'
+import { useUiAlertStore } from '../stores/uiAlert'
+
+const uiAlert = useUiAlertStore()
 
 // 실제 백엔드 Swagger(192.168.0.31:8080/swagger-ui, 2026-07-23 확인) 결과:
 // - GET /statistics는 period가 아니라 siteId(선택)/from/to(날짜) 파라미터를 씀 — period는 실재하지 않았음
@@ -56,6 +59,11 @@ onMounted(async () => {
   await load()
 })
 watch([from, to, siteId], load)
+
+function exportExcel() {
+  // 통계 전용 엑셀 출력 API는 백엔드에 없음(Swagger 확인, StatisticsController엔 GET /statistics 하나뿐) — 안내만
+  uiAlert.show('통계 출력 기능은 아직 백엔드에 구현되어 있지 않습니다.')
+}
 </script>
 
 <template>
@@ -70,6 +78,7 @@ watch([from, to, siteId], load)
       <input v-model="from" type="date" class="field-input" style="margin-bottom:0;width:150px;" />
       <span style="color:var(--color-text-muted);">~</span>
       <input v-model="to" type="date" class="field-input" style="margin-bottom:0;width:150px;" />
+      <button class="btn" style="margin-left:auto;" @click="exportExcel">출력</button>
     </div>
 
     <p v-if="loading" style="color:var(--color-text-muted);">불러오는 중...</p>

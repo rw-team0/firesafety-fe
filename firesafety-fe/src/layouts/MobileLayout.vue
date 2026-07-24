@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useMonitoringStore } from '../stores/monitoring'
+import { ROLE_LABEL } from '../constants/roles'
 import ConfirmModal from '../components/ConfirmModal.vue'
 
 const router = useRouter()
@@ -35,7 +36,7 @@ function goToPanel() {
       <span style="font-weight:700;color:var(--color-text);font-size:15px;">ArcGuard</span>
       <span :style="{ color: monitoring.wsConnected ? 'var(--color-success)' : 'var(--color-offline)' }">● 통신 {{ monitoring.wsConnected ? '정상' : '두절' }}</span>
       <span style="margin-left:auto;">미확인 알림 {{ monitoring.unreadAlertCount }}</span>
-      <span>{{ auth.user?.name }} {{ auth.role }}</span>
+      <span>이름 : {{ auth.user?.name }} 권한: {{ ROLE_LABEL[auth.role] ?? auth.role }}</span>
     </header>
     <main style="flex:1;overflow-y:auto;"><router-view :key="$route.fullPath" /></main>
     <nav style="display:flex;border-top:1px solid var(--color-border);flex:none;">

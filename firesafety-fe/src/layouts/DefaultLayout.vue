@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { ROLE_RANK } from '../constants/roles'
+import { ROLE_RANK, ROLE_LABEL } from '../constants/roles'
 import { useAuthStore } from '../stores/auth'
 import { useMonitoringStore } from '../stores/monitoring'
 import { useRouter } from 'vue-router'
@@ -51,8 +51,9 @@ function doLogout(){
       <span :style="{ color: monitoring.wsConnected ? 'var(--color-success)' : 'var(--color-offline)', fontSize:'12px' }">
         통신상태: {{ monitoring.wsConnected ? '정상' : '두절' }}
       </span>
-      <span style="margin-left:auto;font-size:12px;">미확인 알림 {{ monitoring.unreadAlertCount }}</span>
-      <span>{{ auth.user?.name }} {{ auth.role }}</span>
+      <span style="margin-left:auto;font-size:12px;">미확인 알림 : {{ monitoring.unreadAlertCount }}</span>
+      <span>이름 : {{ auth.user?.name }}</span>
+      <span>권한: {{ ROLE_LABEL[auth.role] ?? auth.role }}</span>
       <button class="btn" @click="showLogoutConfirm = true">로그아웃</button>
     </header>
 
