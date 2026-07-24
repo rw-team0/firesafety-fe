@@ -6,6 +6,10 @@ const httpRequester = axios.create({
   withCredentials: true, // HttpOnly 쿠키(at, rt)를 요청에 자동으로 실어보냄
 });
 
+// 로그아웃 진행 중에는 그 사이 도착하는 401을 재발급/강제리다이렉트로 처리하지 않도록 막는 플래그
+let loggingOut = false;
+export function setLoggingOut(v) { loggingOut = v; }
+
 httpRequester.interceptors.response.use(
   // 성공 응답은 손대지 않고 그대로 통과
   res => res,
@@ -18,6 +22,10 @@ httpRequester.interceptors.response.use(
     }
 
     const { status, data, config } = err.response;
+
+    if (loggingOut && status === 401) {
+      return Promise.reject(err);
+    }
 
     // RT까지 만료된 경우 (재발급 API 자체가 401) → 로그아웃 처리
     if (config.url === '/auth/reissue' && status === 401) {

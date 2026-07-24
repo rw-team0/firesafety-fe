@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import httpRequester from '../utils/httpRequester'
+import httpRequester, { setLoggingOut } from '../utils/httpRequester'
+import { useMonitoringStore } from './monitoring'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(JSON.parse(sessionStorage.getItem('user') || 'null'))
@@ -20,8 +21,15 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout() {
-    try { await httpRequester.post('/auth/logout') } catch (e) { /* 멱등 처리라 실패 무시 */ }
+    setLoggingOut(true)
+    // 안 멈추면 세션 없이도 폴링/WS가 계속 돌면서 재발급 실패가 반복 발생한다 — 로그아웃 API 호출보다 먼저 정지시켜서
+    // 그 사이에 진행 중이던 요청 자체를 최소화함
+    useMonitoringStore().stop()
+    try {
+      await httpRequester.post('/auth/logout')
+    } catch (e) { /* 멱등 처리라 실패 무시 */ }
     clear()
+    setLoggingOut(false)
   }
 
   return { user, isLoggedIn, role, login, logout, setUser, clear }

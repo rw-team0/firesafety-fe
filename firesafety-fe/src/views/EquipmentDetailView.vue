@@ -103,13 +103,21 @@ function openEdit() {
   editErrorMsg.value = ''
   showEditModal.value = true
 }
+
 async function saveEdit() {
   editErrorMsg.value = ''
+
   if (!editForm.value.name || !editForm.value.deviceSerial) {
     editErrorMsg.value = '분전반명/일련번호를 입력해주세요.'
     return
   }
+
+  if (editForm.value.mNo && editForm.value.mNo.length !== 5) {
+    editErrorMsg.value = '장비번호는 정확히 5자리여야 합니다.'
+    return
+  }
   editSubmitting.value = true
+
   try {
     await httpRequester.put(`/panels/${panelId}`, editForm.value)
     showEditModal.value = false
@@ -225,8 +233,8 @@ async function saveEdit() {
               <input v-model.number="editForm.circuitCount" type="number" min="1" max="10" class="field-input" />
             </div>
             <div style="flex:1;">
-              <label class="field-label">장비번호</label>
-              <input v-model="editForm.mNo" class="field-input" />
+              <label class="field-label">장비번호(정확히 5자리)</label>
+              <input v-model="editForm.mNo" maxlength="5" class="field-input" />
             </div>
           </div>
 

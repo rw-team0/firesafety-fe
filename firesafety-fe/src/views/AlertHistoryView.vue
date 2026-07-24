@@ -233,7 +233,7 @@ onMounted(async () => {
       <template v-if="canExport">
         <button class="btn" style="margin-left:auto;" :disabled="!selected.length" @click="pendingBulkAction = 'confirm'">확인</button>
         <button class="btn" :disabled="!selected.length" @click="pendingBulkAction = 'resolve'">조치</button>
-        <button class="btn" :disabled="!selected.length" @click="pendingExport = 'selected'">출력</button>
+        <button class="btn" :disabled="!selected.length" @click="pendingExport = 'selected'">선택 출력</button>
         <button class="btn" @click="pendingExport = 'all'">전체출력</button>
       </template>
     </div>

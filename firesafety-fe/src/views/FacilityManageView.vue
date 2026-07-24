@@ -129,7 +129,14 @@ async function savePanelForm() {
     panelErrorMsg.value = '소속 현장/분전반명/일련번호를 입력해주세요.'
     return
   }
+
+  if (panelForm.value.mNo && panelForm.value.mNo.length !== 5) {
+    panelErrorMsg.value = '장비번호는 정확히 5자리여야 합니다.'
+    return
+  }
+
   panelSubmitting.value = true
+
   try {
     const { siteId, ...body } = panelForm.value
     await httpRequester.post(`/sites/${siteId}/panels`, body)
@@ -241,7 +248,9 @@ onMounted(async () => {
       <button v-if="auth.role === 'SUPER_ADMIN'" class="btn" :class="{ 'btn-primary': tab==='sites' }" @click="tab='sites'">현장관리</button>
       <button class="btn" :class="{ 'btn-primary': tab==='panels' }" @click="tab='panels'">분전반관리</button>
       <button class="btn" :class="{ 'btn-primary': tab==='circuits' }" @click="tab='circuits'">회로관리</button>
+      <!-- 2026-07-24: 사이드바로 이동시키고 여기 진입점은 주석 처리(삭제 아님)
       <router-link v-if="auth.role === 'SUPER_ADMIN'" class="btn" to="/settings/facilities/history" style="margin-left:auto;">관리 이력</router-link>
+      -->
     </div>
 
     <!-- 현장관리: 좌 등록/수정폼 + 우 목록(선택삭제) — 분전반관리와 동일 패턴, 와이어프레임 기준 -->
@@ -313,9 +322,9 @@ onMounted(async () => {
             <label class="field-label">회로 개수(1~10)</label>
             <input v-model.number="panelForm.circuitCount" type="number" min="1" max="10" class="field-input" />
           </div>
-          <div style="flex:1;">
-            <label class="field-label">장비번호</label>
-            <input v-model="panelForm.mNo" placeholder="장비번호" class="field-input" />
+         <div style="flex:1;">
+            <label class="field-label">장비번호(정확히 5자리)</label>
+            <input v-model="panelForm.mNo" placeholder="00099" maxlength="5" class="field-input" />
           </div>
         </div>
 

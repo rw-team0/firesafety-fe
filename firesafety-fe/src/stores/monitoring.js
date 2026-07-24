@@ -102,6 +102,18 @@ export const useMonitoringStore = defineStore('monitoring', () => {
     riskPopup.value = null
   }
 
+  // 로그아웃 시 호출 — 안 멈추면 세션이 없는데도 폴링/WS가 계속 돌면서
+  // 재발급 실패("인증이 만료되었습니다")가 반복 발생한다
+  function stop() {
+    stopPolling()
+    socket?.deactivate()
+    socket = null
+    started = false
+    wsConnected.value = false
+    summary.value = null
+    riskPopup.value = null
+  }
+
   function setWsConnected(v) { wsConnected.value = v }
   function setUnreadAlertCount(v) { unreadAlertCount.value = v }
 
@@ -113,6 +125,7 @@ export const useMonitoringStore = defineStore('monitoring', () => {
     riskPopup,
     refreshedAt,
     start,
+    stop,
     refresh,
     clearRiskPopup,
     setWsConnected,

@@ -52,8 +52,8 @@ async function handleLogin() {
   <div class="login-page">
     <div class="login-card card">
       <div class="brand">
-        <span class="dot"></span>
-        <span>FireSafety 관제</span>
+        <img src="/arcguard.png" alt="ArcGuard" style="width:28px;height:28px;border-radius:6px;" />
+        <span>ArcGuard</span>
       </div>
       <p class="subtitle">전기화재 방지 스마트 진단/분석 모니터링</p>
       <div v-if="sessionExpiredBanner" class="banner banner-warn">세션이 만료되어 로그인이 필요합니다</div>
@@ -109,12 +109,6 @@ async function handleLogin() {
   justify-content: center;
   font-weight: 700;
   font-size: 18px;
-}
-.dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--color-success);
 }
 .subtitle {
   text-align: center;

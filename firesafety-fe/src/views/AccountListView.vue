@@ -37,7 +37,9 @@ async function confirmBulkDelete() {
     <h2 style="margin-top:0;">계정 목록</h2>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
       <router-link class="btn" to="/settings/accounts/new">+ 계정 추가</router-link>
+      <!-- 2026-07-24: 사이드바로 이동시키고 여기 진입점은 주석 처리(삭제 아님)
       <router-link class="btn" to="/settings/accounts/history">관리 이력</router-link>
+      -->
       <span
         style="margin-left:16px;font-size:12.5px;color:var(--color-text-muted);"
         title="Swagger 확인 결과 GET /users는 삭제된 계정을 조회하는 방법 자체가 없음. 삭제된 계정 복구는 관리 이력 화면에서 할 수 있습니다"

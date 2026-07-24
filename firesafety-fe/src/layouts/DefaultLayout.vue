@@ -31,7 +31,9 @@ const navGroups = [
   { title:'통계', items:[{ name:'statistics', label:'통계', minRole:'GENERAL' }] },
   { title:'관리', items:[
     { name:'facility-manage', label:'설비 관리', minRole:'ADMIN' },
+    { name:'facility-audit-history', label:'설비 관리 이력', minRole:'SUPER_ADMIN' },
     { name:'account-list', label:'계정 관리', minRole:'SUPER_ADMIN' },
+    { name:'account-history', label:'계정 관리 이력', minRole:'SUPER_ADMIN' },
   ]},
 ]
 function isAllowed(item){ return ROLE_RANK[auth.role] >= ROLE_RANK[item.minRole] }
