@@ -56,7 +56,7 @@ async function confirmBulkDelete() {
           <th style="padding:8px;"><input type="checkbox" :checked="allSelected" @change="toggleSelectAll" /></th>
           <th style="padding:8px;">계정명</th>
           <th style="padding:8px;">이메일</th>
-          <th style="padding:8px;">역할</th>
+          <th style="padding:8px;">권한</th>
           <th style="padding:8px;">가입일</th>
           <th style="padding:8px;">관리</th>
         </tr>

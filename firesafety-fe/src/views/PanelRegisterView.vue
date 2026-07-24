@@ -68,7 +68,7 @@ async function submit() {
       <label class="field-label">설치일(선택)</label>
       <input v-model="form.installedAt" type="date" class="field-input" />
 
-      <p class="field-label" style="font-weight:600;color:var(--color-text);">환경 임계값 설정(서버 주의 기준값, 선택)</p>
+      <p class="field-label" style="font-weight:600;color:var(--color-text);">주의 임계값 설정(서버 주의 기준값, 선택)</p>
       <p style="font-size:12px;color:var(--color-text-muted);margin:-8px 0 12px;word-break:keep-all;">설정값 이상이 30초 이상 지속되면 '주의' 상태로 전환됩니다.</p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px;">
         <div>

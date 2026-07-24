@@ -76,7 +76,7 @@ function cancel() {
         <label class="field-label">연락처</label>
         <input v-model="form.phone" placeholder="연락처" class="field-input">
 
-        <label class="field-label">역할</label>
+        <label class="field-label">권한</label>
         <select v-model="form.role" class="field-input"><option value="GENERAL">일반</option><option value="ADMIN">관리자</option></select>
 
         <label class="field-label">담당현장</label>

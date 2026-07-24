@@ -86,7 +86,7 @@ export const useMonitoringStore = defineStore('monitoring', () => {
       return
     }
     // site-assignments는 ADMIN 이상만 호출 가능한 관리용 API라 GENERAL이 부르면 403.
-    // 본인 담당 현장만 필요하면 되므로 이미 역할별로 스코프되는 /sites를 사용한다.
+    // 본인 담당 현장만 필요하면 되므로 이미 권한별로 스코프되는 /sites를 사용한다.
     const sitesRes = await httpRequester.get('/sites')
     const siteIds = sitesRes.data.resultData.map((s) => s.siteId)
     socket = createMonitoringSocket({
