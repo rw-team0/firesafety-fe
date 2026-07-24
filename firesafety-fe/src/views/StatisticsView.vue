@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import httpRequester from '../utils/httpRequester'
 import { useUiAlertStore } from '../stores/uiAlert'
 
@@ -54,9 +54,15 @@ async function load() {
   summary.value = res.data.resultData
   loading.value = false
 }
+let pollTimer = null
 onMounted(async () => {
   await loadSites()
   await load()
+  pollTimer = setInterval(load, 15000)
+})
+
+onUnmounted(() => {
+  if (pollTimer) clearInterval(pollTimer)
 })
 watch([from, to, siteId], load)
 

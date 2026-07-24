@@ -41,12 +41,28 @@ export default defineConfig({
     proxy: {
       '/api': {
         //target: 'http://localhost:8080', // 실제 백엔드 주소로 변경
-        target: 'http://192.168.0.39:8080', // 실제 백엔드 주소로 변경
+        target: 'http://192.168.0.59:8080', // 실제 백엔드 주소로 변경
         changeOrigin: true,
       },
       '/ws': {
         //target: 'http://localhost:8080',
-        target: 'ws://192.168.0.39:8080',
+        target: 'ws://192.168.0.59:8080',
+        ws: true,
+        changeOrigin: true,
+      },
+    },
+  },
+  // vite preview(npm run build 결과 로컬 확인용)는 server.proxy를 재사용하지 않아서 따로 필요함.
+  // PWA 서비스워커는 HTTPS 또는 localhost에서만 등록되므로, PWA 테스트는 build+preview로만 가능
+  preview: {
+    port: 4173,
+    proxy: {
+      '/api': {
+        target: 'http://192.168.0.59:8080',
+        changeOrigin: true,
+      },
+      '/ws': {
+        target: 'ws://192.168.0.59:8080',
         ws: true,
         changeOrigin: true,
       },

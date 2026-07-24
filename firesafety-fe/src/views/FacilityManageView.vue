@@ -25,8 +25,7 @@ async function loadSites() {
   sites.value = res.data.resultData
 }
 
-// ── 현장 관리(좌: 등록/수정폼, 우: 목록+선택삭제 — 분전반관리와 동일 패턴, 와이어프레임 기준) ──
-const editingSiteId = ref(null) // null이면 신규등록 모드
+// ── 현장 관리(좌: 등록 전용폼, 우: 목록+선택삭제. 수정은 팝업 모달로 분리, 2026-07-24) ──
 const siteSubmitting = ref(false)
 const siteErrorMsg = ref('')
 const selectedSiteIds = ref([])
@@ -35,12 +34,7 @@ function emptySiteForm() { return { name: '', address: '' } }
 const siteForm = ref(emptySiteForm())
 
 function resetSiteForm() {
-  editingSiteId.value = null
   siteForm.value = emptySiteForm()
-}
-function openSiteDetail(s) {
-  editingSiteId.value = s.siteId
-  siteForm.value = { name: s.name, address: s.address ?? '' }
 }
 async function saveSiteForm() {
   siteErrorMsg.value = ''
@@ -50,16 +44,46 @@ async function saveSiteForm() {
   }
   siteSubmitting.value = true
   try {
-    if (editingSiteId.value) await httpRequester.put(`/sites/${editingSiteId.value}`, siteForm.value)
-    else await httpRequester.post('/sites', siteForm.value)
+    await httpRequester.post('/sites', siteForm.value)
     resetSiteForm()
     loadSites()
   } catch (e) {
-    siteErrorMsg.value = e.response?.data?.resultMessage ?? '저장에 실패했습니다.'
+    siteErrorMsg.value = e.response?.data?.resultMessage ?? '등록에 실패했습니다.'
   } finally {
     siteSubmitting.value = false
   }
 }
+
+// 현장 수정 팝업
+const showEditSiteModal = ref(false)
+const editSiteId = ref(null)
+const editSiteForm = ref(emptySiteForm())
+const editSiteSubmitting = ref(false)
+const editSiteErrorMsg = ref('')
+function openSiteDetail(s) {
+  editSiteId.value = s.siteId
+  editSiteForm.value = { name: s.name, address: s.address ?? '' }
+  editSiteErrorMsg.value = ''
+  showEditSiteModal.value = true
+}
+async function saveEditSite() {
+  editSiteErrorMsg.value = ''
+  if (!editSiteForm.value.name) {
+    editSiteErrorMsg.value = '현장명을 입력해주세요.'
+    return
+  }
+  editSiteSubmitting.value = true
+  try {
+    await httpRequester.put(`/sites/${editSiteId.value}`, editSiteForm.value)
+    showEditSiteModal.value = false
+    loadSites()
+  } catch (e) {
+    editSiteErrorMsg.value = e.response?.data?.resultMessage ?? '수정에 실패했습니다.'
+  } finally {
+    editSiteSubmitting.value = false
+  }
+}
+
 const allSitesSelected = computed(() => sites.value.length > 0 && selectedSiteIds.value.length === sites.value.length)
 function toggleSiteSelectAll() {
   selectedSiteIds.value = allSitesSelected.value ? [] : sites.value.map(s => s.siteId)
@@ -70,7 +94,7 @@ async function confirmSiteBulkDelete() {
   for (const siteId of selectedSiteIds.value) {
     await httpRequester.delete(`/sites/${siteId}`)
   }
-  if (selectedSiteIds.value.includes(editingSiteId.value)) resetSiteForm()
+  if (selectedSiteIds.value.includes(editSiteId.value)) showEditSiteModal.value = false
   selectedSiteIds.value = []
   loadSites()
   loadAllPanels()
@@ -266,9 +290,9 @@ onMounted(async () => {
 
         <div style="display:flex;gap:8px;justify-content:center;margin-top:8px;">
           <button class="btn btn-primary" style="min-width:120px;" :disabled="siteSubmitting" @click="saveSiteForm">
-            {{ siteSubmitting ? '처리 중...' : (editingSiteId ? '수정' : '등록') }}
+            {{ siteSubmitting ? '처리 중...' : '등록' }}
           </button>
-          <button class="btn" style="min-width:120px;" @click="resetSiteForm">취소</button>
+          <button class="btn" style="min-width:120px;" @click="resetSiteForm">초기화</button>
         </div>
       </div>
 
@@ -301,6 +325,27 @@ onMounted(async () => {
       </div>
     </div>
 
+    <!-- 현장 수정 팝업 -->
+    <div v-if="showEditSiteModal" class="modal-overlay" @click.self="showEditSiteModal=false">
+      <div class="modal-panel" style="width:380px;">
+        <div class="modal-header">현장 수정</div>
+        <div class="modal-body">
+          <div v-if="editSiteErrorMsg" class="banner banner-danger">{{ editSiteErrorMsg }}</div>
+
+          <label class="field-label">현장명</label>
+          <input v-model="editSiteForm.name" placeholder="현장명" class="field-input" />
+
+          <label class="field-label">주소</label>
+          <input v-model="editSiteForm.address" placeholder="주소" class="field-input" />
+
+          <div class="modal-actions">
+            <button class="btn btn-primary" style="min-width:120px;" :disabled="editSiteSubmitting" @click="saveEditSite">{{ editSiteSubmitting ? '저장 중...' : '저장' }}</button>
+            <button class="btn" style="min-width:120px;" @click="showEditSiteModal=false">취소</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 분전반관리: 좌 등록/수정폼 + 우 선택 현장의 분전반 목록(피그마 와이어프레임 기준) -->
     <div v-if="tab==='panels'" style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
       <div class="card" style="width:340px;padding:24px;flex:none;">
@@ -329,6 +374,7 @@ onMounted(async () => {
         </div>
 
         <p class="field-label" style="font-weight:600;color:var(--color-text);">환경 임계값 설정</p>
+        <p style="font-size:12px;color:var(--color-text-muted);margin:-8px 0 12px;word-break:keep-all;">설정값 이상이 30초 이상 지속되면 '주의' 상태로 전환됩니다.</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px;">
           <div>
             <label class="field-label">zct 누설전류(mA)</label>
