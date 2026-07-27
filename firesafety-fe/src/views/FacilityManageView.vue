@@ -414,7 +414,10 @@ onMounted(async () => {
     <!-- 현장 수정 팝업 -->
     <div v-if="showEditSiteModal" class="modal-overlay" @click.self="showEditSiteModal=false">
       <div class="modal-panel" style="width:380px;">
-        <div class="modal-header">현장 수정</div>
+        <div class="modal-header">
+          현장 수정
+          <button class="modal-close" aria-label="닫기" @click="showEditSiteModal=false">×</button>
+        </div>
         <div class="modal-body">
           <div v-if="editSiteErrorMsg" class="banner banner-danger">{{ editSiteErrorMsg }}</div>
 

@@ -114,7 +114,10 @@ function formatDateTime(v) {
     <!-- 미확인 알림 클릭 시 최근 알림 이력 보여주고 해당 알림으로 이동하는 모달 -->
     <div v-if="showAlertsModal" class="modal-overlay" @click.self="showAlertsModal=false">
       <div class="modal-panel" style="width:420px;">
-        <div class="modal-header">최근 미확인 알림(최대 5개)</div>
+        <div class="modal-header">
+          최근 미확인 알림(최대 5개)
+          <button class="modal-close" aria-label="닫기" @click="showAlertsModal=false">×</button>
+        </div>
         <div class="modal-body">
           <div style="margin-bottom:28px;">
         <div
@@ -144,7 +147,10 @@ function formatDateTime(v) {
     <!-- 위험 등급 전환 팝업(프론트가이드 7.5절). 레이아웃에 있어서 어느 화면에 있든 뜬다 -->
     <div v-if="monitoring.riskPopup" class="modal-overlay" @click.self="monitoring.clearRiskPopup()">
       <div class="modal-panel">
-        <div class="modal-header danger">위험 발생</div>
+        <div class="modal-header danger">
+          위험 발생
+          <button class="modal-close" aria-label="닫기" @click="monitoring.clearRiskPopup()">×</button>
+        </div>
         <div class="modal-body">
           <p>{{ monitoring.riskPopup.panelName }}에서 위험 상태가 감지되었습니다.</p>
           <p>상세보기 시 바로 해당 알림이 확인 처리 됩니다.</p>

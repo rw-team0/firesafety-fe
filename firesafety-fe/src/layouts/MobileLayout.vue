@@ -59,7 +59,10 @@ function goToPanel() {
     <!-- 위험 등급 전환 팝업. 레이아웃에 있어서 대시보드/알림이력 어느 화면이든 뜬다 -->
     <div v-if="monitoring.riskPopup" class="modal-overlay" @click.self="monitoring.clearRiskPopup()">
       <div class="modal-panel">
-        <div class="modal-header danger">위험 발생</div>
+        <div class="modal-header danger">
+          위험 발생
+          <button class="modal-close" aria-label="닫기" @click="monitoring.clearRiskPopup()">×</button>
+        </div>
         <div class="modal-body">
           <p>{{ monitoring.riskPopup.panelName }}에서 위험 상태가 감지되었습니다.</p>
           <p>상세보기 시 바로 해당 알림이 확인 처리 됩니다.</p>

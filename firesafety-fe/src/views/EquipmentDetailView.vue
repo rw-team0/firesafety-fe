@@ -36,7 +36,8 @@ function circuitCardStyle(status) {
 
 // 항목별 raw값 vs 서버 주의 임계값 직접 비교(프론트 계산). 백엔드의 "30초 지속" 공식 CAUTION 판정과는
 // 별개라 순간적으로 안 맞을 수 있음 — 그래도 각 카드에서 뭐가 임계치를 넘었는지 바로 보여주려고 추가함
-function thresholdCardStyle(value, threshold) {
+function thresholdCardStyle(value, threshold, hardwareAlarm) {
+  if (hardwareAlarm) return { background: 'var(--color-danger)', color: '#fff', borderColor: 'transparent' }
   if (value == null || threshold == null || Number(value) < Number(threshold)) return {}
   return { background: 'var(--color-warning)', color: '#000', borderColor: 'transparent' }
 }
@@ -170,7 +171,7 @@ async function saveEdit() {
     </div>
 
     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;">
-      <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...thresholdCardStyle(panel.totalCurrent, panel.overcurrentThreshold) }">
+      <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...thresholdCardStyle(panel.totalCurrent, panel.overcurrentThreshold, panel.overcurrentAlarm) }">
         <div style="font-size:12px;color:var(--color-text-muted);">전체전류</div>
         <div style="font-size:16px;font-weight:700;">{{ panel.totalCurrent != null ? panel.totalCurrent + 'A' : '-' }}</div>
       </div>
@@ -200,28 +201,39 @@ async function saveEdit() {
 
     <h3>환경</h3>
     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;">
-      <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...thresholdCardStyle(panel.temperature, panel.tempThreshold) }">
+      <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...thresholdCardStyle(panel.temperature, panel.tempThreshold, panel.overheatAlarm) }">
         <div style="font-size:12px;color:var(--color-text-muted);">온도</div>
         <div style="font-size:16px;font-weight:700;">{{ panel.temperature != null ? panel.temperature + '°C' : '-' }}</div>
       </div>
-      <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...thresholdCardStyle(panel.humidity, panel.humidityThreshold) }">
+      <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...thresholdCardStyle(panel.humidity, panel.humidityThreshold, panel.humidityAlarm) }">
         <div style="font-size:12px;color:var(--color-text-muted);">습도</div>
         <div style="font-size:16px;font-weight:700;">{{ panel.humidity != null ? panel.humidity + '%' : '-' }}</div>
       </div>
-      <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...thresholdCardStyle(panel.fireRaw, panel.fireThreshold) }">
+      <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...thresholdCardStyle(panel.fireRaw, panel.fireThreshold, panel.fireAlarm) }">
         <div style="font-size:12px;color:var(--color-text-muted);">불꽃센서</div>
         <div style="font-size:16px;font-weight:700;">{{ panel.fireRaw ?? '-' }}</div>
       </div>
-      <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...thresholdCardStyle(panel.gasRaw, panel.gasThreshold) }">
+      <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...thresholdCardStyle(panel.gasRaw, panel.gasThreshold, panel.gasAlarm) }">
         <div style="font-size:12px;color:var(--color-text-muted);">가스센서</div>
         <div style="font-size:16px;font-weight:700;">{{ panel.gasRaw ?? '-' }}</div>
       </div>
+      <!-- 누설전류 실시간 카드 — panel.leakMa(실시간 값)/panel.leakageAlarm(하드웨어 알람)이 아직 백엔드 응답에 없어서 주석 처리(삭제 아님).
+           추가되면 아래 주석만 풀면 됨 -->
+      
+      <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...thresholdCardStyle(panel.leakMa, panel.leakMaThreshold, panel.leakageAlarm) }">
+        <div style="font-size:12px;color:var(--color-text-muted);">누설전류</div>
+        <div style="font-size:16px;font-weight:700;">{{ panel.leakMa != null ? panel.leakMa + 'mA' : '-' }}</div>
+      </div>
+     
     </div>
 
     <!-- 임계값 설정(수정) 모달 -->
     <div v-if="showEditModal" class="modal-overlay" @click.self="showEditModal=false">
       <div class="modal-panel" style="width:420px;">
-        <div class="modal-header">분전반 정보/임계값 수정</div>
+        <div class="modal-header">
+          분전반 정보/임계값 수정
+          <button class="modal-close" aria-label="닫기" @click="showEditModal=false">×</button>
+        </div>
         <div class="modal-body">
           <div v-if="editErrorMsg" class="banner banner-danger">{{ editErrorMsg }}</div>
 

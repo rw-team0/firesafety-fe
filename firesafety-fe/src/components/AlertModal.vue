@@ -6,7 +6,10 @@ const uiAlert = useUiAlertStore()
 <template>
   <div v-if="uiAlert.message" class="modal-overlay modal-overlay-top" @click.self="uiAlert.close()">
     <div class="modal-panel">
-      <div class="modal-header">알림</div>
+      <div class="modal-header">
+        알림
+        <button class="modal-close" aria-label="닫기" @click="uiAlert.close()">×</button>
+      </div>
       <div class="modal-body">
         <p>{{ uiAlert.message }}</p>
         <div class="modal-actions">

@@ -305,6 +305,7 @@ onMounted(async () => {
       <div class="modal-panel">
         <div class="modal-header" :style="{ background: STATUS_COLOR[detail.status], color:'#fff', borderBottom:'none' }">
           {{ detail.panelName }} 상세
+          <button class="modal-close" aria-label="닫기" @click="detail=null">×</button>
         </div>
         <div class="modal-body">
           <p>현장: {{ siteNameFor(detail.panelName) }}</p>

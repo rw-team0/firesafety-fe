@@ -5,7 +5,10 @@ const emit = defineEmits(['confirm', 'cancel'])
 <template>
   <div class="modal-overlay" @click.self="$emit('cancel')">
     <div class="modal-panel">
-      <div class="modal-header" :class="{ danger }">{{ title }}</div>
+      <div class="modal-header" :class="{ danger }">
+        {{ title }}
+        <button class="modal-close" aria-label="닫기" @click="$emit('cancel')">×</button>
+      </div>
       <div class="modal-body">
         <p :style="{ color: 'var(--color-text)', margin: note ? '0 0 6px' : '0 0 16px' }">{{ message }}</p>
         <p v-if="note" style="margin:0 0 16px;">{{ note }}</p>

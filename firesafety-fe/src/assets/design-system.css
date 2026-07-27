@@ -93,13 +93,30 @@ input[type="checkbox"] { accent-color: var(--color-accent); }
   overflow: hidden;
 }
 .modal-header {
-  padding: 14px 18px;
+  position: relative;
+  padding: 14px 40px 14px 18px;
   font-weight: 700;
   font-size: 16px;
   color: var(--color-text);
   border-bottom: 1px solid var(--color-border);
 }
 .modal-header.danger { background: var(--color-danger); color: #fff; border-bottom: none; }
+.modal-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: none;
+  color: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+}
+.modal-close:hover { background: rgba(0, 0, 0, .08); }
+.modal-header.danger .modal-close:hover { background: rgba(255, 255, 255, .2); }
 .modal-body { padding: 18px; }
 .modal-body p { color: var(--color-text-muted); font-size: 13px; margin: 0 0 16px; white-space: pre-line; }
 .modal-actions { display: flex; justify-content: center; gap: 8px; }
