@@ -57,6 +57,10 @@ function goToPanel(panelId) {
 function goToAlert(alertId) {
   router.push(`/alerts?alertId=${alertId}`)
 }
+
+function formatDateTime(v) {
+  return v ? v.replace('T', ' ') : '-'
+}
 </script>
 
 <template>
@@ -102,7 +106,7 @@ function goToAlert(alertId) {
             {{ ALERT_STATUS_LABEL[a.status] ?? a.status }}
           </span>
           <span style="flex:1;">{{ a.panelName }} {{ a.type }}</span>
-          <span style="font-size:11px;color:var(--color-text-muted);">{{ a.triggeredAt }}</span>
+          <span style="font-size:11px;color:var(--color-text-muted);">{{ formatDateTime(a.triggeredAt) }}</span>
           <button class="btn" @click.stop="goToAlert(a.alertId)">상세조회</button>
         </div>
         <p v-if="!recentAlerts.length" style="color:var(--color-text-muted);">최근 알림이 없습니다.</p>
