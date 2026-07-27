@@ -3,10 +3,12 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
 import { useAuthStore } from '../stores/auth'
+import { useUiAlertStore } from '../stores/uiAlert'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
+const uiAlert = useUiAlertStore()
 const userId = route.params.userId
 
 const form = ref({ name:'', email:'', phone:'', role:'GENERAL', siteIds:[] })
@@ -49,6 +51,7 @@ async function save() {
     const { siteIds, ...body } = form.value
     await httpRequester.put(`/users/${userId}`, body) // API-005
     await httpRequester.post(`/users/${userId}/site-assignments`, { siteIds: siteIds ?? [] })
+    uiAlert.show('계정 정보가 수정되었습니다.')
     router.push('/settings/accounts')
   } catch (e) {
     errorMsg.value = e.response?.data?.resultMessage || '수정에 실패했습니다.'

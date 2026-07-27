@@ -148,6 +148,7 @@ onMounted(load)
 async function restore(userId) {
   restoringId.value = null
   await httpRequester.patch(`/users/${userId}/restore`) // Swagger 확인: PATCH /api/users/{userId}/restore
+  uiAlert.show('계정이 복구되었습니다.')
   load()
 }
 </script>

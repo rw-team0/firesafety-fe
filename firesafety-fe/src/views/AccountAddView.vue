@@ -53,6 +53,7 @@ async function submit() {
     if (siteId) {
       await httpRequester.post(`/users/${res.data.resultData.userId}/site-assignments`, { siteIds: [siteId] })
     }
+    uiAlert.show('계정이 등록되었습니다.')
     router.push('/settings/accounts')
   } catch (e) {
     errorMsg.value = e.response?.data?.resultMessage === 'EMAIL_DUPLICATE'

@@ -4,6 +4,9 @@ import { useRoute } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
 import { createMonitoringSocket } from '../utils/monitoringSocket'
 import { useAuthStore } from '../stores/auth'
+import { useUiAlertStore } from '../stores/uiAlert'
+
+const uiAlert = useUiAlertStore()
 
 const route = useRoute()
 const auth = useAuthStore()
@@ -121,6 +124,7 @@ async function saveEdit() {
   try {
     await httpRequester.put(`/panels/${panelId}`, editForm.value)
     showEditModal.value = false
+    uiAlert.show('분전반 정보가 수정되었습니다.')
     await load()
   } catch (e) {
     editErrorMsg.value = e.response?.data?.resultMessage ?? '저장에 실패했습니다.'

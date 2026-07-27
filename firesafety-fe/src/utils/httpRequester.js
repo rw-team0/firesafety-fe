@@ -21,7 +21,17 @@ httpRequester.interceptors.response.use(
       return Promise.reject(err);
     }
 
-    const { status, data, config } = err.response;
+    const { status, config } = err.response;
+    let data = err.response.data;
+    // responseType:'blob'로 요청한 경우(엑셀 다운로드 등) 실패 응답의 바디도 axios가 Blob으로 내려줘서
+    // data.resultMessage를 바로 못 읽음 — 텍스트로 읽어 JSON 파싱해야 실제 서버 에러 메시지가 나온다
+    if (config.responseType === 'blob' && data instanceof Blob) {
+      try {
+        data = JSON.parse(await data.text());
+      } catch (e) {
+        data = {};
+      }
+    }
 
     if (loggingOut && status === 401) {
       return Promise.reject(err);

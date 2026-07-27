@@ -4,6 +4,9 @@ import { useRoute, useRouter } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import { useAuthStore } from '../stores/auth'
+import { useUiAlertStore } from '../stores/uiAlert'
+
+const uiAlert = useUiAlertStore()
 
 // 이 화면의 현장/분전반/회로 수정·삭제 API는 실제 백엔드 Swagger(192.168.0.31:8080/swagger-ui, 2026-07-23 확인)로
 // 전부 검증됨: PUT/DELETE /sites/{id}, PUT/DELETE /panels/{id}, DELETE /circuits/{id}.
@@ -74,6 +77,7 @@ async function saveSiteForm() {
   try {
     await httpRequester.post('/sites', siteForm.value)
     resetSiteForm()
+    uiAlert.show('현장이 등록되었습니다.')
     loadSites()
   } catch (e) {
     siteErrorMsg.value = e.response?.data?.resultMessage ?? '등록에 실패했습니다.'
@@ -131,6 +135,7 @@ async function saveEditSite() {
   try {
     await httpRequester.put(`/sites/${editSiteId.value}`, editSiteForm.value)
     showEditSiteModal.value = false
+    uiAlert.show('현장 정보가 수정되었습니다.')
     loadSites()
   } catch (e) {
     editSiteErrorMsg.value = e.response?.data?.resultMessage ?? '수정에 실패했습니다.'
@@ -145,12 +150,14 @@ function toggleSiteSelectAll() {
 }
 async function confirmSiteBulkDelete() {
   showSiteBulkDeleteConfirm.value = false
+  const count = selectedSiteIds.value.length
   // 현장 벌크삭제 전용 API는 없음(DELETE /sites/{id} 단건만 존재, Swagger 확인) — 선택 개수만큼 순차 삭제
   for (const siteId of selectedSiteIds.value) {
     await httpRequester.delete(`/sites/${siteId}`)
   }
   if (selectedSiteIds.value.includes(editSiteId.value)) showEditSiteModal.value = false
   selectedSiteIds.value = []
+  uiAlert.show(`현장 ${count}건이 삭제되었습니다.`)
   loadSites()
   loadAllPanels()
 }
@@ -220,6 +227,7 @@ async function savePanelForm() {
     const { siteId, ...body } = panelForm.value
     await httpRequester.post(`/sites/${siteId}/panels`, body)
     resetPanelForm()
+    uiAlert.show('분전반이 등록되었습니다.')
     loadManagedPanels()
     loadAllPanels()
   } catch (e) {
@@ -234,10 +242,12 @@ function togglePanelSelectAll() {
 }
 async function confirmPanelBulkDelete() {
   showPanelBulkDeleteConfirm.value = false
+  const count = selectedPanelIds.value.length
   // 분전반 벌크삭제 전용 API는 없음(DELETE /panels/{id} 단건만 존재, Swagger 확인) — 선택 개수만큼 순차 삭제
   for (const panelId of selectedPanelIds.value) {
     await httpRequester.delete(`/panels/${panelId}`)
   }
+  uiAlert.show(`분전반 ${count}건이 삭제되었습니다.`)
   loadManagedPanels()
   loadAllPanels()
 }
@@ -295,6 +305,7 @@ async function confirmAddSlot() {
     loadType: newLoadType.value || undefined,
   })
   addingChannelNo.value = null
+  uiAlert.show('회로가 등록되었습니다.')
   loadCircuits()
 }
 
@@ -304,10 +315,12 @@ function toggleCircuitSelectAll() {
 }
 async function confirmCircuitBulkDelete() {
   showCircuitBulkDeleteConfirm.value = false
+  const count = selectedCircuitIds.value.length
   // 회로 벌크삭제 전용 API는 없음(DELETE /circuits/{id} 단건만 존재, Swagger 확인) — 선택 개수만큼 순차 삭제
   for (const circuitId of selectedCircuitIds.value) {
     await httpRequester.delete(`/circuits/${circuitId}`)
   }
+  uiAlert.show(`회로 ${count}건이 삭제되었습니다.`)
   loadCircuits()
 }
 

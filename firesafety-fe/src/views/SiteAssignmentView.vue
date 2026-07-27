@@ -2,12 +2,15 @@
 import { ref, onMounted, watch } from 'vue'
 import httpRequester from '../utils/httpRequester'
 import { ROLE_LABEL } from '../constants/roles'
+import { useUiAlertStore } from '../stores/uiAlert'
 
+const uiAlert = useUiAlertStore()
 const users = ref([])
 const sites = ref([])
 const userId = ref(null)
 const assignedSiteIds = ref([])
 const saving = ref(false)
+// 저장 완료 알림을 전역 팝업(uiAlert)으로 통일하면서 더 이상 안 씀(주석 처리, 삭제 아님)
 const savedMessage = ref('')
 
 async function loadUsers() {
@@ -24,14 +27,13 @@ async function loadAssignments() {
   const res = await httpRequester.get(`/users/${userId.value}/site-assignments`) // API-014
   assignedSiteIds.value = res.data.resultData.map(s => s.siteId)
 }
-watch(userId, () => { savedMessage.value = ''; loadAssignments() })
+watch(userId, loadAssignments)
 
 async function save() {
   saving.value = true
-  savedMessage.value = ''
   try {
     await httpRequester.post(`/users/${userId.value}/site-assignments`, { siteIds: assignedSiteIds.value }) // API-015
-    savedMessage.value = '저장되었습니다.'
+    uiAlert.show('담당 현장이 저장되었습니다.')
   } finally {
     saving.value = false
   }
@@ -63,7 +65,9 @@ onMounted(async () => {
       </div>
 
       <button class="btn btn-primary" :disabled="saving || !userId" @click="save">{{ saving ? '저장 중...' : '저장' }}</button>
+      저장 완료 알림을 우측 인라인 텍스트 대신 전역 팝업(uiAlert)으로 통일하면서 더 이상 안 씀(주석 처리, 삭제 아님)
       <span v-if="savedMessage" style="color:var(--color-success);margin-left:8px;font-size:13px;">{{ savedMessage }}</span>
+     
     </div>
   </div>
 </template>

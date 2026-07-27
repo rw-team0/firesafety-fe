@@ -4,9 +4,11 @@ import { useRoute } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import { useAuthStore } from '../stores/auth'
+import { useUiAlertStore } from '../stores/uiAlert'
 
 const route = useRoute()
 const auth = useAuthStore()
+const uiAlert = useUiAlertStore()
 
 const alerts = ref([])
 const totalElements = ref(0)
@@ -146,6 +148,7 @@ async function load() {
 async function runBulkAction() {
   const action = pendingBulkAction.value
   pendingBulkAction.value = null
+  const count = selected.value.length
   for (const alertId of selected.value) {
     try {
       await httpRequester.patch(`/alerts/${alertId}/${action}`)
@@ -153,6 +156,7 @@ async function runBulkAction() {
       // 실패 토스트는 인터셉터가 이미 띄웠음 — 나머지 선택 항목은 계속 처리
     }
   }
+  uiAlert.show(`선택한 ${count}건이 ${action === 'confirm' ? '확인' : '조치'} 처리되었습니다.`)
   load()
 }
 
@@ -170,6 +174,7 @@ async function runAction() {
   await httpRequester.patch(`/alerts/${pendingAction.value.alertId}/confirm`) // Swagger 확인: PATCH /api/alerts/{alertId}/confirm
   pendingAction.value = null
   detail.value = null
+  uiAlert.show(`상태가 ${STATUS_LABEL.UNCONFIRMED} → ${STATUS_LABEL.CONFIRMED}(으)로 변경되었습니다.`)
   load()
 }
 
@@ -179,6 +184,7 @@ async function submitResolve() {
   resolveNoteMode.value = false
   resolutionNote.value = ''
   detail.value = null
+  uiAlert.show(`상태가 ${STATUS_LABEL.CONFIRMED} → ${STATUS_LABEL.RESOLVED}(으)로 변경되었습니다.`)
   load()
 }
 
@@ -194,6 +200,8 @@ async function exportExcel(onlySelected) {
   a.download = `알림이력_${today}.xlsx`
   a.click()
   URL.revokeObjectURL(url)
+  // 브라우저 저장 대화상자가 실제로 언제 닫히는지는 JS로 감지 불가능해서, 다운로드 완료 팝업은 따로 안 띄움
+  // (브라우저 자체 다운로드바/알림이 이미 피드백 역할을 함)
 }
 
 async function confirmExport() {
@@ -304,9 +312,6 @@ onMounted(async () => {
           <p>유형: {{ TYPE_LABEL[detail.type] ?? detail.type }}</p>
           <p>상태: {{ STATUS_LABEL[detail.status] ?? detail.status }}</p>
           <p>발생일시: {{ formatDateTime(detail.triggeredAt) }}</p>
-          <p v-if="detail.confirmedAt">확인일시: {{ formatDateTime(detail.confirmedAt) }} ({{ detail.confirmedByName ?? '-' }})</p>
-          <p v-if="detail.status === 'RESOLVED'">조치일시: {{ formatDateTime(detail.resolvedAt) }} ({{ detail.resolvedByName ?? '-' }})</p>
-          <p v-if="detail.status === 'RESOLVED'">조치 메모: {{ detail.resolutionNote || '(입력 없음)' }}</p>
 
           <template v-if="resolveNoteMode">
             <label class="field-label">조치 메모(선택, 엑셀 비고란에 표시됨)</label>

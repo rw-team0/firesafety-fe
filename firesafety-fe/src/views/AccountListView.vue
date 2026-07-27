@@ -3,7 +3,9 @@ import { ref, computed, onMounted } from 'vue'
 import httpRequester from '../utils/httpRequester'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import { ROLE_LABEL } from '../constants/roles'
+import { useUiAlertStore } from '../stores/uiAlert'
 
+const uiAlert = useUiAlertStore()
 const users = ref([])
 const selected = ref([])
 const loading = ref(false)
@@ -26,9 +28,11 @@ async function loadUsers() {
 onMounted(loadUsers)
 
 async function confirmBulkDelete() {
+  const count = selected.value.length
   // Swagger 확인: PATCH /api/users/bulk-delete, body {userIds}. ACC-006(확인 팝업 1회로 전체 삭제) 충족.
   await httpRequester.patch('/users/bulk-delete', { userIds: selected.value })
   showDeleteConfirm.value = false
+  uiAlert.show(`계정 ${count}건이 삭제되었습니다.`)
   loadUsers()
 }
 </script>
