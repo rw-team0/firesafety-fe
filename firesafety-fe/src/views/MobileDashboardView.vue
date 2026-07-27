@@ -13,6 +13,7 @@ const STATUS_LABEL = { NORMAL: '정상', CAUTION: '주의', RISK: '위험', OFFL
 const STATUS_COLOR = { NORMAL: 'var(--color-success)', CAUTION: 'var(--color-warning)', RISK: 'var(--color-danger)', OFFLINE: 'var(--color-offline)' }
 const ALERT_STATUS_LABEL = { UNCONFIRMED: '미확인', CONFIRMED: '확인됨', RESOLVED: '조치됨' }
 const ALERT_STATUS_COLOR = { UNCONFIRMED: 'var(--color-danger)', CONFIRMED: 'var(--color-warning)', RESOLVED: 'var(--color-success)' }
+const TYPE_LABEL = { ARC: '아크', OVERHEAT: '과열', LEAKAGE: '누설', OVERCURRENT: '과전류', HUMIDITY: '습도', GAS: '가스', FIRE: '불꽃', DOOR_OPEN: '도어열림', DEVICE_ERROR: '장비오류', COMM_LOST: '통신두절' }
 
 // 위험 팝업/WS 연결은 MobileLayout이 이미 소유(monitoring.start()) — 여기선 스토어 값만 그대로 씀
 const counts = computed(() => ({
@@ -79,7 +80,7 @@ function goToPanel(panelId) {
             <span class="badge" :style="{ background: ALERT_STATUS_COLOR[a.status] ?? 'var(--color-offline)' }">
               {{ ALERT_STATUS_LABEL[a.status] ?? a.status }}
             </span>
-            <span class="alert-text">{{ a.panelName }} {{ a.type }}</span>
+            <span class="alert-text">{{ a.panelName }} {{ TYPE_LABEL[a.type] ?? a.type }}</span>
             <span class="alert-time">{{ a.triggeredAt?.slice(5, 16).replace('T', ' ') }}</span>
           </div>
         </div>

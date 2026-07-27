@@ -14,6 +14,7 @@ const STATUS_LABEL = { NORMAL: '정상', CAUTION: '주의', RISK: '위험', OFFL
 const STATUS_COLOR = { NORMAL: 'var(--color-success)', CAUTION: 'var(--color-warning)', RISK: 'var(--color-danger)', OFFLINE: 'var(--color-offline)' }
 const ALERT_STATUS_LABEL = { UNCONFIRMED: '미확인', CONFIRMED: '확인됨', RESOLVED: '조치됨' }
 const ALERT_STATUS_COLOR = { UNCONFIRMED: 'var(--color-danger)', CONFIRMED: 'var(--color-warning)', RESOLVED: 'var(--color-success)' }
+const TYPE_LABEL = { ARC: '아크', OVERHEAT: '과열', LEAKAGE: '누설', OVERCURRENT: '과전류', HUMIDITY: '습도', GAS: '가스', FIRE: '불꽃', DOOR_OPEN: '도어열림', DEVICE_ERROR: '장비오류', COMM_LOST: '통신두절' }
 
 // 위험 팝업/WS 연결/panelGrid는 monitoring 스토어가 레이아웃 마운트 시점에 이미 소유(어느 화면에 있든
 // 위험 감지가 되게 하려는 목적) — 이 화면은 스토어 값을 그대로 보여주고, 자기 전용 데이터(최근 알림)만 따로 관리
@@ -105,7 +106,7 @@ function formatDateTime(v) {
           <span class="badge" :style="{ background: ALERT_STATUS_COLOR[a.status] ?? 'var(--color-offline)' }">
             {{ ALERT_STATUS_LABEL[a.status] ?? a.status }}
           </span>
-          <span style="flex:1;">{{ a.panelName }} {{ a.type }}</span>
+          <span style="flex:1;">{{ a.panelName }} {{ TYPE_LABEL[a.type] ?? a.type }}</span>
           <span style="font-size:11px;color:var(--color-text-muted);">{{ formatDateTime(a.triggeredAt) }}</span>
           <button class="btn" @click.stop="goToAlert(a.alertId)">상세조회</button>
         </div>

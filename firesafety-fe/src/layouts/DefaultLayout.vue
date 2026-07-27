@@ -16,6 +16,7 @@ function toggleSidebar() { sidebarOpen.value = !sidebarOpen.value }
 
 const ALERT_STATUS_LABEL = { UNCONFIRMED: '미확인', CONFIRMED: '확인됨', RESOLVED: '조치됨' }
 const ALERT_STATUS_COLOR = { UNCONFIRMED: 'var(--color-danger)', CONFIRMED: 'var(--color-warning)', RESOLVED: 'var(--color-success)' }
+const TYPE_LABEL = { ARC: '아크', OVERHEAT: '과열', LEAKAGE: '누설', OVERCURRENT: '과전류', HUMIDITY: '습도', GAS: '가스', FIRE: '불꽃', DOOR_OPEN: '도어열림', DEVICE_ERROR: '장비오류', COMM_LOST: '통신두절' }
 const showAlertsModal = ref(false)
 const recentAlerts = ref([])
 
@@ -125,7 +126,7 @@ function formatDateTime(v) {
           <span class="badge" :style="{ background: ALERT_STATUS_COLOR[a.status] ?? 'var(--color-offline)' }">
             {{ ALERT_STATUS_LABEL[a.status] ?? a.status }}
           </span>
-          <span style="flex:1;">{{ a.panelName }} {{ a.type }}</span>
+          <span style="flex:1;">{{ a.panelName }} {{ TYPE_LABEL[a.type] ?? a.type }}</span>
           <span style="font-size:11px;color:var(--color-text-muted);">{{ formatDateTime(a.triggeredAt) }}</span>
           <button class="btn" @click.stop="goToAlert(a.alertId)">상세조회</button>
         </div>
