@@ -24,7 +24,11 @@ function doLogout(){
   auth.logout().then(() => router.push('/m/login'))
 }
 function goToPanel() {
+  const panelId = monitoring.riskPopup?.panelId
   monitoring.clearRiskPopup()
+  if (panelId != null) {
+    monitoring.confirmLatestAlertForPanel(panelId).catch(() => {})
+  }
   router.push('/m/dashboard') // 모바일은 장비 상세 화면(S-001~003)이 없어서 대시보드로만 이동
 }
 </script>
@@ -58,6 +62,7 @@ function goToPanel() {
         <div class="modal-header danger">위험 발생</div>
         <div class="modal-body">
           <p>{{ monitoring.riskPopup.panelName }}에서 위험 상태가 감지되었습니다.</p>
+          <p>상세보기 시 바로 해당 알림이 확인 처리 됩니다.</p>
           <div class="modal-actions">
             <button class="btn btn-primary" @click="goToPanel()">확인</button>
           </div>

@@ -298,7 +298,7 @@ onMounted(async () => {
           <p>회로: {{ detail.circuitNo != null ? `채널 ${detail.circuitNo}` : '-' }}</p>
           <p>유형: {{ TYPE_LABEL[detail.type] ?? detail.type }}</p>
           <p>상태: {{ STATUS_LABEL[detail.status] ?? detail.status }}</p>
-          <p>발생시각: {{ formatDateTime(detail.triggeredAt) }}</p>
+          <p>발생일시: {{ formatDateTime(detail.triggeredAt) }}</p>
           <p v-if="detail.confirmedAt">확인일시: {{ formatDateTime(detail.confirmedAt) }} ({{ detail.confirmedByName ?? '-' }})</p>
           <p v-if="detail.status === 'RESOLVED'">조치일시: {{ formatDateTime(detail.resolvedAt) }} ({{ detail.resolvedByName ?? '-' }})</p>
           <p v-if="detail.status === 'RESOLVED'">조치 메모: {{ detail.resolutionNote || '(입력 없음)' }}</p>

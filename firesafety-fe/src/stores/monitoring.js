@@ -46,6 +46,14 @@ export const useMonitoringStore = defineStore('monitoring', () => {
     }
   }
 
+  async function confirmLatestAlertForPanel(panelId) {
+    const res = await httpRequester.get('/alerts', { params: { panelId, status: 'UNCONFIRMED', size: 1 } })
+    const latest = res.data.resultData.content[0]
+    if (latest) {
+      await httpRequester.patch(`/alerts/${latest.alertId}/confirm`)
+    }
+  }
+
   // 백엔드팀 API 가이드 6절: WS 메시지엔 panelId/status 상세 데이터가 없고
   // { eventType, occurredAt } 새로고침 신호만 옴 — 받으면 REST로 다시 조회해서 비교
   async function refresh() {
@@ -128,6 +136,7 @@ export const useMonitoringStore = defineStore('monitoring', () => {
     stop,
     refresh,
     clearRiskPopup,
+    confirmLatestAlertForPanel,
     setWsConnected,
     setUnreadAlertCount,
   }

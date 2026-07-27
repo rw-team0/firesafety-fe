@@ -26,6 +26,7 @@ onMounted(() => monitoring.start())
 
 function goToPanel(panelId) {
   monitoring.clearRiskPopup()
+  monitoring.confirmLatestAlertForPanel(panelId).catch(() => {}) // 실패해도 상세 이동은 그대로 진행
   router.push(`/equipment/${panelId}`)
 }
 
@@ -146,6 +147,7 @@ function formatDateTime(v) {
         <div class="modal-header danger">위험 발생</div>
         <div class="modal-body">
           <p>{{ monitoring.riskPopup.panelName }}에서 위험 상태가 감지되었습니다.</p>
+          <p>상세보기 시 바로 해당 알림이 확인 처리 됩니다.</p>
           <div class="modal-actions">
             <button class="btn btn-primary" @click="goToPanel(monitoring.riskPopup.panelId)">상세보기</button>
             <button class="btn" @click="monitoring.clearRiskPopup()">닫기</button>
