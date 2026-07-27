@@ -30,11 +30,35 @@ const siteSubmitting = ref(false)
 const siteErrorMsg = ref('')
 const selectedSiteIds = ref([])
 const showSiteBulkDeleteConfirm = ref(false)
-function emptySiteForm() { return { name: '', address: '' } }
+function emptySiteForm() { return { name: '', address: '', zipCode: '' } }
 const siteForm = ref(emptySiteForm())
+
+const addressQuery = ref('')
+const addressResults = ref([])
+const addressSearching = ref(false)
+async function searchSiteAddress() {
+  if (!addressQuery.value.trim()) return
+  addressSearching.value = true
+  try {
+    const res = await httpRequester.get('/facilities/address/search', { params: { keyword: addressQuery.value.trim() } })
+    addressResults.value = res.data.resultData.content
+  } catch (e) {
+    // 실패 알림은 인터셉터가 이미 띄웠음
+  } finally {
+    addressSearching.value = false
+  }
+}
+function pickSiteAddress(item) {
+  siteForm.value.address = item.address
+  siteForm.value.zipCode = item.zipCode ?? ''
+  addressResults.value = []
+  addressQuery.value = ''
+}
 
 function resetSiteForm() {
   siteForm.value = emptySiteForm()
+  addressQuery.value = ''
+  addressResults.value = []
 }
 async function saveSiteForm() {
   siteErrorMsg.value = ''
@@ -43,7 +67,7 @@ async function saveSiteForm() {
     return
   }
   if (!siteForm.value.address) {
-    siteErrorMsg.value = '현장 주소를 입력해주세요.'
+    siteErrorMsg.value = '주소를 입력해주세요.'
     return
   }
   siteSubmitting.value = true
@@ -64,10 +88,33 @@ const editSiteId = ref(null)
 const editSiteForm = ref(emptySiteForm())
 const editSiteSubmitting = ref(false)
 const editSiteErrorMsg = ref('')
+const editAddressQuery = ref('')
+const editAddressResults = ref([])
+const editAddressSearching = ref(false)
+async function searchEditSiteAddress() {
+  if (!editAddressQuery.value.trim()) return
+  editAddressSearching.value = true
+  try {
+    const res = await httpRequester.get('/facilities/address/search', { params: { keyword: editAddressQuery.value.trim() } })
+    editAddressResults.value = res.data.resultData.content
+  } catch (e) {
+    // 실패 알림은 인터셉터가 이미 띄웠음
+  } finally {
+    editAddressSearching.value = false
+  }
+}
+function pickEditSiteAddress(item) {
+  editSiteForm.value.address = item.address
+  editSiteForm.value.zipCode = item.zipCode ?? ''
+  editAddressResults.value = []
+  editAddressQuery.value = ''
+}
 function openSiteDetail(s) {
   editSiteId.value = s.siteId
-  editSiteForm.value = { name: s.name, address: s.address ?? '' }
+  editSiteForm.value = { name: s.name, address: s.address ?? '', zipCode: s.zipCode ?? '' }
   editSiteErrorMsg.value = ''
+  editAddressQuery.value = ''
+  editAddressResults.value = []
   showEditSiteModal.value = true
 }
 async function saveEditSite() {
@@ -77,7 +124,7 @@ async function saveEditSite() {
     return
   }
   if (!editSiteForm.value.address) {
-    editSiteErrorMsg.value = '현장 주소를 입력해주세요.'
+    editSiteErrorMsg.value = '주소를 입력해주세요.'
     return
   }
   editSiteSubmitting.value = true
@@ -293,8 +340,22 @@ onMounted(async () => {
         <label class="field-label">현장명</label>
         <input v-model="siteForm.name" placeholder="현장명" class="field-input" />
 
-        <label class="field-label">주소</label>
-        <input v-model="siteForm.address" placeholder="주소" class="field-input" />
+        <label class="field-label">주소 검색</label>
+        <div style="display:flex;gap:6px;">
+          <input v-model="addressQuery" placeholder="예: 테헤란로 123" class="field-input" @keyup.enter="searchSiteAddress" />
+          <button type="button" class="btn" :disabled="addressSearching" @click="searchSiteAddress">{{ addressSearching ? '검색 중...' : '검색' }}</button>
+        </div>
+        <ul v-if="addressResults.length" style="list-style:none;margin:4px 0 0;padding:0;border:1px solid var(--color-border);border-radius:6px;max-height:160px;overflow-y:auto;">
+          <li v-for="(r, idx) in addressResults" :key="idx" style="padding:6px 8px;cursor:pointer;border-bottom:1px solid var(--color-border);" @click="pickSiteAddress(r)">
+            {{ r.address }}<span v-if="r.zipCode" style="color:var(--color-text-muted);font-size:12px;"> ({{ r.zipCode }})</span>
+          </li>
+        </ul>
+
+        <label class="field-label">주소 *</label>
+        <input v-model="siteForm.address" placeholder="검색 결과를 선택하거나 직접 입력" class="field-input" />
+
+        <label class="field-label">우편번호</label>
+        <input v-model="siteForm.zipCode" placeholder="주소 검색 시 자동 입력" class="field-input" />
 
         <div style="display:flex;gap:8px;justify-content:center;margin-top:8px;">
           <button class="btn btn-primary" style="min-width:120px;" :disabled="siteSubmitting" @click="saveSiteForm">
@@ -315,6 +376,7 @@ onMounted(async () => {
               <th style="padding:8px;"><input type="checkbox" :checked="allSitesSelected" @change="toggleSiteSelectAll" /></th>
               <th style="padding:8px;">현장명</th>
               <th style="padding:8px;">주소</th>
+              <th style="padding:8px;">우편번호</th>
               <th style="padding:8px;">관리</th>
             </tr>
           </thead>
@@ -325,10 +387,11 @@ onMounted(async () => {
               <td style="padding:8px;">
                 <span :style="s.address === '주소 미입력(관리자 확인 필요)' ? { color: 'var(--color-danger)', fontWeight: 700 } : {}">{{ s.address ?? '-' }}</span>
               </td>
+              <td style="padding:8px;">{{ s.zipCode ?? '-' }}</td>
               <td style="padding:8px;"><button class="btn" @click="openSiteDetail(s)">수정</button></td>
             </tr>
             <tr v-if="!sites.length">
-              <td colspan="4" style="padding:16px;text-align:center;color:var(--color-text-muted);">등록된 현장이 없습니다.</td>
+              <td colspan="5" style="padding:16px;text-align:center;color:var(--color-text-muted);">등록된 현장이 없습니다.</td>
             </tr>
           </tbody>
         </table>
@@ -345,8 +408,22 @@ onMounted(async () => {
           <label class="field-label">현장명</label>
           <input v-model="editSiteForm.name" placeholder="현장명" class="field-input" />
 
-          <label class="field-label">주소</label>
-          <input v-model="editSiteForm.address" placeholder="주소" class="field-input" />
+          <label class="field-label">주소 검색</label>
+          <div style="display:flex;gap:6px;">
+            <input v-model="editAddressQuery" placeholder="예: 테헤란로 123" class="field-input" @keyup.enter="searchEditSiteAddress" />
+            <button type="button" class="btn" :disabled="editAddressSearching" @click="searchEditSiteAddress">{{ editAddressSearching ? '검색 중...' : '검색' }}</button>
+          </div>
+          <ul v-if="editAddressResults.length" style="list-style:none;margin:4px 0 0;padding:0;border:1px solid var(--color-border);border-radius:6px;max-height:160px;overflow-y:auto;">
+            <li v-for="(r, idx) in editAddressResults" :key="idx" style="padding:6px 8px;cursor:pointer;border-bottom:1px solid var(--color-border);" @click="pickEditSiteAddress(r)">
+              {{ r.address }}<span v-if="r.zipCode" style="color:var(--color-text-muted);font-size:12px;"> ({{ r.zipCode }})</span>
+            </li>
+          </ul>
+
+          <label class="field-label">주소 *</label>
+          <input v-model="editSiteForm.address" placeholder="검색 결과를 선택하거나 직접 입력" class="field-input" />
+
+          <label class="field-label">우편번호</label>
+          <input v-model="editSiteForm.zipCode" placeholder="주소 검색 시 자동 입력" class="field-input" />
 
           <div class="modal-actions">
             <button class="btn btn-primary" style="min-width:120px;" :disabled="editSiteSubmitting" @click="saveEditSite">{{ editSiteSubmitting ? '저장 중...' : '저장' }}</button>
@@ -388,27 +465,27 @@ onMounted(async () => {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px;">
           <div>
             <label class="field-label">zct 누설전류(mA)</label>
-            <input v-model.number="panelForm.leakMaThreshold" type="number" class="field-input" />
+            <input v-model.number="panelForm.leakMaThreshold" type="number" placeholder="예: 20.0" class="field-input" />
           </div>
           <div>
             <label class="field-label">온도(도)</label>
-            <input v-model.number="panelForm.tempThreshold" type="number" class="field-input" />
+            <input v-model.number="panelForm.tempThreshold" type="number" placeholder="예: 80.0" class="field-input" />
           </div>
           <div>
             <label class="field-label">습도(%)</label>
-            <input v-model.number="panelForm.humidityThreshold" type="number" class="field-input" />
+            <input v-model.number="panelForm.humidityThreshold" type="number" placeholder="예: 80.0" class="field-input" />
           </div>
           <div>
             <label class="field-label">과전류(A)</label>
-            <input v-model.number="panelForm.overcurrentThreshold" type="number" class="field-input" />
+            <input v-model.number="panelForm.overcurrentThreshold" type="number" placeholder="예: 30.0" class="field-input" />
           </div>
           <div>
             <label class="field-label">가스</label>
-            <input v-model.number="panelForm.gasThreshold" type="number" class="field-input" />
+            <input v-model.number="panelForm.gasThreshold" type="number" placeholder="예: 5000 (미입력 시 기본값 5000)" class="field-input" />
           </div>
           <div>
             <label class="field-label">불꽃</label>
-            <input v-model.number="panelForm.fireThreshold" type="number" class="field-input" />
+            <input v-model.number="panelForm.fireThreshold" type="number" placeholder="예: 5000 (미입력 시 기본값 5000)" class="field-input" />
           </div>
         </div>
 

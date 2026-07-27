@@ -157,12 +157,9 @@ async function restore(userId) {
     <div style="display:flex;gap:8px;margin:16px 0;align-items:center;flex-wrap:wrap;">
       <input v-model="keyword" placeholder="대상계정/관리계정명 검색" class="field-input" style="margin-bottom:0;width:200px;" @keyup.enter="search" />
       <button class="btn" @click="search">검색</button>
-      <select v-model="period" class="field-input" style="margin-bottom:0;width:130px;" @change="applyPeriod">
-        <option value="">전체 기간</option>
-        <option value="today">오늘</option>
-        <option value="7d">최근 7일</option>
-        <option value="30d">최근 30일</option>
-      </select>
+      <input v-model="filters.from" type="date" class="field-input" style="margin-bottom:0;width:150px;" @change="onDateFilterChange" />
+      <span style="color:var(--color-text-muted);">~</span>
+      <input v-model="filters.to" type="date" class="field-input" style="margin-bottom:0;width:150px;" @change="onDateFilterChange" />
       <button class="btn" style="margin-left:auto;" @click="exportExcel">전체 출력</button>
       <button class="btn" :disabled="!selected.length" @click="exportExcel">선택 출력</button>
     </div>

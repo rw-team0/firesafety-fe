@@ -246,27 +246,27 @@ async function saveEdit() {
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px;">
             <div>
               <label class="field-label">zct 누설전류(mA)</label>
-              <input v-model.number="editForm.leakMaThreshold" type="number" class="field-input" />
+              <input v-model.number="editForm.leakMaThreshold" type="number" placeholder="예: 20.0" class="field-input" />
             </div>
             <div>
               <label class="field-label">온도(도)</label>
-              <input v-model.number="editForm.tempThreshold" type="number" class="field-input" />
+              <input v-model.number="editForm.tempThreshold" type="number" placeholder="예: 80.0" class="field-input" />
             </div>
             <div>
               <label class="field-label">습도(%)</label>
-              <input v-model.number="editForm.humidityThreshold" type="number" class="field-input" />
+              <input v-model.number="editForm.humidityThreshold" type="number" placeholder="예: 80.0" class="field-input" />
             </div>
             <div>
               <label class="field-label">과전류(A)</label>
-              <input v-model.number="editForm.overcurrentThreshold" type="number" class="field-input" />
+              <input v-model.number="editForm.overcurrentThreshold" type="number" placeholder="예: 30.0" class="field-input" />
             </div>
             <div>
               <label class="field-label">가스</label>
-              <input v-model.number="editForm.gasThreshold" type="number" class="field-input" />
+              <input v-model.number="editForm.gasThreshold" type="number" placeholder="예: 5000 (미입력 시 기본값 5000)" class="field-input" />
             </div>
             <div>
               <label class="field-label">불꽃</label>
-              <input v-model.number="editForm.fireThreshold" type="number" class="field-input" />
+              <input v-model.number="editForm.fireThreshold" type="number" placeholder="예: 5000 (미입력 시 기본값 5000)" class="field-input" />
             </div>
           </div>
 
