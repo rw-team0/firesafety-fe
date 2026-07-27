@@ -18,8 +18,15 @@ const sites = ref([])
 // /panels로 panelName→siteId 매핑을 만들어 이름 기반으로 붙여야 함 — panelName이 겹치면 부정확할 수 있음
 const panelSiteByName = ref({})
 
-const filters = ref({ from: '', to: '', status: '', type: '', siteId: '' })
-const period = ref('') // '' | 'today' | '7d' | '30d' — AlertListReq엔 period 파라미터가 없어서 여기서 from/to로 환산해서 보냄
+// 다른 이력 화면(통계/설비 관리이력/계정 관리이력)과 동일하게 기본 기간을 최근 7일로 설정
+function isoDate(d) { return d.toISOString().slice(0, 10) }
+const today = new Date()
+const weekAgo = new Date(today)
+weekAgo.setDate(weekAgo.getDate() - 7)
+
+const filters = ref({ from: isoDate(weekAgo), to: isoDate(today), status: '', type: '', siteId: '' })
+// 기간 프리셋 드롭다운 → 다른 이력 화면(통계/설비 관리이력/계정 관리이력)과 동일한 달력(from/to 날짜입력)으로 통일하면서 더 이상 안 씀(주석 처리, 삭제 아님)
+// const period = ref('') // '' | 'today' | '7d' | '30d' — AlertListReq엔 period 파라미터가 없어서 여기서 from/to로 환산해서 보냄
 const page = ref(0) // 0-base(AlertListReq 기준)
 const PAGE_SIZE = 13
 const keyword = ref('') // AlertListReq엔 자유검색 파라미터가 없어서 이미 불러온 목록을 클라이언트에서 필터링
@@ -37,26 +44,27 @@ function formatDateTime(v) {
   return v ? v.replace('T', ' ') : '-'
 }
 
-function applyPeriod() {
-  const iso = (d) => d.toISOString().slice(0, 10)
-  const today = new Date()
-  if (period.value === 'today') {
-    filters.value.from = iso(today)
-    filters.value.to = iso(today)
-  } else if (period.value === '7d') {
-    const from = new Date(today); from.setDate(from.getDate() - 7)
-    filters.value.from = iso(from)
-    filters.value.to = iso(today)
-  } else if (period.value === '30d') {
-    const from = new Date(today); from.setDate(from.getDate() - 30)
-    filters.value.from = iso(from)
-    filters.value.to = iso(today)
-  } else {
-    filters.value.from = ''
-    filters.value.to = ''
-  }
-  resetAndLoad()
-}
+// 기간 프리셋 드롭다운 → 달력(from/to 날짜입력)으로 교체하면서 더 이상 안 씀(주석 처리, 삭제 아님)
+// function applyPeriod() {
+//   const iso = (d) => d.toISOString().slice(0, 10)
+//   const today = new Date()
+//   if (period.value === 'today') {
+//     filters.value.from = iso(today)
+//     filters.value.to = iso(today)
+//   } else if (period.value === '7d') {
+//     const from = new Date(today); from.setDate(from.getDate() - 7)
+//     filters.value.from = iso(from)
+//     filters.value.to = iso(today)
+//   } else if (period.value === '30d') {
+//     const from = new Date(today); from.setDate(from.getDate() - 30)
+//     filters.value.from = iso(from)
+//     filters.value.to = iso(today)
+//   } else {
+//     filters.value.from = ''
+//     filters.value.to = ''
+//   }
+//   resetAndLoad()
+// }
 
 function search() {
   appliedKeyword.value = keyword.value.trim()
@@ -212,12 +220,9 @@ onMounted(async () => {
     <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
       <input v-model="keyword" placeholder="현장/분전반/유형 검색" class="field-input" style="margin-bottom:0;width:180px;" @keyup.enter="search" />
       <button class="btn" @click="search">검색</button>
-      <select v-model="period" class="field-input" style="margin-bottom:0;width:120px;" @change="applyPeriod">
-        <option value="">전체 기간</option>
-        <option value="today">오늘</option>
-        <option value="7d">최근 7일</option>
-        <option value="30d">최근 30일</option>
-      </select>
+      <input v-model="filters.from" type="date" class="field-input" style="margin-bottom:0;width:150px;" @change="resetAndLoad" />
+      <span style="color:var(--color-text-muted);">~</span>
+      <input v-model="filters.to" type="date" class="field-input" style="margin-bottom:0;width:150px;" @change="resetAndLoad" />
       <select v-if="auth.role === 'SUPER_ADMIN'" v-model="filters.siteId" class="field-input" style="margin-bottom:0;width:140px;" @change="resetAndLoad">
         <option value="">전체 현장</option>
         <option v-for="s in sites" :key="s.siteId" :value="s.siteId">{{ s.name }}</option>
