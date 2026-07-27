@@ -42,6 +42,10 @@ async function saveSiteForm() {
     siteErrorMsg.value = '현장명을 입력해주세요.'
     return
   }
+  if (!siteForm.value.address) {
+    siteErrorMsg.value = '현장 주소를 입력해주세요.'
+    return
+  }
   siteSubmitting.value = true
   try {
     await httpRequester.post('/sites', siteForm.value)
@@ -70,6 +74,10 @@ async function saveEditSite() {
   editSiteErrorMsg.value = ''
   if (!editSiteForm.value.name) {
     editSiteErrorMsg.value = '현장명을 입력해주세요.'
+    return
+  }
+  if (!editSiteForm.value.address) {
+    editSiteErrorMsg.value = '현장 주소를 입력해주세요.'
     return
   }
   editSiteSubmitting.value = true
@@ -314,7 +322,9 @@ onMounted(async () => {
             <tr v-for="s in sites" :key="s.siteId" style="border-bottom:1px solid var(--color-border);">
               <td style="padding:8px;"><input type="checkbox" v-model="selectedSiteIds" :value="s.siteId" /></td>
               <td style="padding:8px;">{{ s.name }}</td>
-              <td style="padding:8px;">{{ s.address ?? '-' }}</td>
+              <td style="padding:8px;">
+                <span :style="s.address === '주소 미입력(관리자 확인 필요)' ? { color: 'var(--color-danger)', fontWeight: 700 } : {}">{{ s.address ?? '-' }}</span>
+              </td>
               <td style="padding:8px;"><button class="btn" @click="openSiteDetail(s)">수정</button></td>
             </tr>
             <tr v-if="!sites.length">

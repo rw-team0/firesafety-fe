@@ -21,7 +21,8 @@ const PAGE_WINDOW = 10
 const selected = ref([])
 const keyword = ref('')
 const appliedKeyword = ref('')
-const period = ref('')
+// 기간 프리셋 드롭다운 → 달력(from/to 날짜입력)으로 교체하면서 period는 더 이상 안 씀(주석 처리, 삭제 아님)
+// const period = ref('')
 const filters = ref({ from: '', to: '' })
 
 const badgeStyle = {
@@ -69,24 +70,28 @@ function search() {
   appliedKeyword.value = keyword.value.trim()
   page.value = 0
 }
-function applyPeriod() {
-  const iso = (d) => d.toISOString().slice(0, 10)
-  const today = new Date()
-  if (period.value === 'today') {
-    filters.value.from = iso(today)
-    filters.value.to = iso(today)
-  } else if (period.value === '7d') {
-    const from = new Date(today); from.setDate(from.getDate() - 7)
-    filters.value.from = iso(from)
-    filters.value.to = iso(today)
-  } else if (period.value === '30d') {
-    const from = new Date(today); from.setDate(from.getDate() - 30)
-    filters.value.from = iso(from)
-    filters.value.to = iso(today)
-  } else {
-    filters.value.from = ''
-    filters.value.to = ''
-  }
+// 기간 프리셋 드롭다운 → 달력(from/to 날짜입력)으로 교체하면서 더 이상 안 씀(주석 처리, 삭제 아님)
+// function applyPeriod() {
+//   const iso = (d) => d.toISOString().slice(0, 10)
+//   const today = new Date()
+//   if (period.value === 'today') {
+//     filters.value.from = iso(today)
+//     filters.value.to = iso(today)
+//   } else if (period.value === '7d') {
+//     const from = new Date(today); from.setDate(from.getDate() - 7)
+//     filters.value.from = iso(from)
+//     filters.value.to = iso(today)
+//   } else if (period.value === '30d') {
+//     const from = new Date(today); from.setDate(from.getDate() - 30)
+//     filters.value.from = iso(from)
+//     filters.value.to = iso(today)
+//   } else {
+//     filters.value.from = ''
+//     filters.value.to = ''
+//   }
+//   page.value = 0
+// }
+function onDateFilterChange() {
   page.value = 0
 }
 const filteredLogs = computed(() => {

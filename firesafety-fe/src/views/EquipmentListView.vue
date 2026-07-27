@@ -119,8 +119,8 @@ async function confirmBulkDelete() {
         <tr style="text-align:left;border-bottom:1px solid var(--color-border);">
           <th style="padding:8px;"><input type="checkbox" :checked="allSelected" @change="toggleSelectAll" /></th>
           <th style="padding:8px;">장비번호</th>
-          <th style="padding:8px;">설비명</th>
           <th v-if="auth.role === 'SUPER_ADMIN'" style="padding:8px;">현장</th>
+          <th style="padding:8px;">분전반명</th>
           <th style="padding:8px;">상태</th>
           <th style="padding:8px;">마지막 일시</th>
           <th style="padding:8px;"></th>
@@ -130,8 +130,8 @@ async function confirmBulkDelete() {
         <tr v-for="p in pagedPanels" :key="p.panelId" style="border-bottom:1px solid var(--color-border);cursor:pointer;" @click="router.push(`/equipment/${p.panelId}`)">
           <td style="padding:8px;" @click.stop><input type="checkbox" v-model="selected" :value="p.panelId" /></td>
           <td style="padding:8px;">{{ p.mNo || '-' }}</td>
-          <td style="padding:8px;">{{ p.name }}</td>
           <td v-if="auth.role === 'SUPER_ADMIN'" style="padding:8px;">{{ sitesById[p.siteId]?.name ?? '-' }}</td>
+          <td style="padding:8px;">{{ p.name }}</td>
           <td style="padding:8px;">
             <span class="badge" :style="{ background: STATUS_COLOR[p.status] }">
               {{ STATUS_LABEL[p.status] ?? p.status }}

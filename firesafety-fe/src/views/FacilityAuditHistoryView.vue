@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import httpRequester from '../utils/httpRequester'
 import { useUiAlertStore } from '../stores/uiAlert'
 
@@ -20,10 +20,18 @@ const sitesById = ref({})
 const panelsById = ref({})
 const usersById = ref({})
 
+function isoDate(d) { return d.toISOString().slice(0, 10) }
+const today = new Date()
+const weekAgo = new Date(today)
+weekAgo.setDate(weekAgo.getDate() - 7)
+const from = ref(isoDate(weekAgo))
+const to = ref(isoDate(today))
+
 const keyword = ref('')
 const appliedKeyword = ref('')
-const period = ref('')
-const filters = ref({ from: '', to: '' })
+// 기간 프리셋 드롭다운 → 달력(from/to 날짜입력)으로 교체하면서 더 이상 안 씀(주석 처리, 삭제 아님)
+// const period = ref('')
+// const filters = ref({ from: '', to: '' })
 const page = ref(0)
 const PAGE_SIZE = 13
 const PAGE_WINDOW = 10
@@ -108,8 +116,8 @@ async function load() {
   let total = Infinity
   while (all.length < total) {
     const params = { page: fetchPage, size: FETCH_SIZE }
-    if (filters.value.from) params.from = filters.value.from
-    if (filters.value.to) params.to = filters.value.to
+    if (from.value) params.from = from.value
+    if (to.value) params.to = to.value
     const res = await httpRequester.get('/facilities/audit-logs', { params })
     const { content, totalElements: te } = res.data.resultData
     all = all.concat(content)
@@ -124,26 +132,9 @@ async function load() {
   loading.value = false
 }
 
-function applyPeriod() {
-  const iso = (d) => d.toISOString().slice(0, 10)
-  const today = new Date()
-  if (period.value === 'today') {
-    filters.value.from = iso(today)
-    filters.value.to = iso(today)
-  } else if (period.value === '7d') {
-    const from = new Date(today); from.setDate(from.getDate() - 7)
-    filters.value.from = iso(from)
-    filters.value.to = iso(today)
-  } else if (period.value === '30d') {
-    const from = new Date(today); from.setDate(from.getDate() - 30)
-    filters.value.from = iso(from)
-    filters.value.to = iso(today)
-  } else {
-    filters.value.from = ''
-    filters.value.to = ''
-  }
-  load()
-}
+// 통계 화면과 동일하게 날짜 입력(from/to)이 바뀌면 즉시 재조회 — 기간 프리셋 드롭다운은 폐기
+watch([from, to], load)
+
 function search() {
   appliedKeyword.value = keyword.value.trim()
   page.value = 0
@@ -191,12 +182,15 @@ onMounted(async () => {
     <div style="display:flex;gap:8px;margin:16px 0;align-items:center;flex-wrap:wrap;">
       <input v-model="keyword" placeholder="이름/관리계정명 검색" class="field-input" style="margin-bottom:0;width:200px;" @keyup.enter="search" />
       <button class="btn" @click="search">검색</button>
-      <select v-model="period" class="field-input" style="margin-bottom:0;width:130px;" @change="applyPeriod">
+      <!-- <select v-model="period" class="field-input" style="margin-bottom:0;width:130px;" @change="applyPeriod">
         <option value="">전체 기간</option>
         <option value="today">오늘</option>
         <option value="7d">최근 7일</option>
         <option value="30d">최근 30일</option>
-      </select>
+      </select> -->
+      <input v-model="from" type="date" class="field-input" style="margin-bottom:0;width:150px;" />
+      <span style="color:var(--color-text-muted);">~</span>
+      <input v-model="to" type="date" class="field-input" style="margin-bottom:0;width:150px;" />
       <button class="btn" style="margin-left:auto;" @click="exportExcel">전체 출력</button>
       <button class="btn" :disabled="!selected.length" @click="exportExcel">선택 출력</button>
     </div>

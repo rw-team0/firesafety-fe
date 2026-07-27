@@ -37,6 +37,12 @@ httpRequester.interceptors.response.use(
       return Promise.reject(err);
     }
 
+    // 로그인 자체의 401(아이디/비번 불일치)은 세션 만료가 아니라 로그인 실패임 — 재발급 시도하면 안 됨
+    if (config.url === '/auth/login' && status === 401) {
+      useUiAlertStore().show(data.resultMessage ?? '로그인에 실패했습니다.');
+      return Promise.reject(err);
+    }
+
     // AT만 만료된 경우 → 조용히 재발급 후 실패했던 요청을 그대로 재시도
     if (status === 401) {
       await httpRequester.post('/auth/reissue');
