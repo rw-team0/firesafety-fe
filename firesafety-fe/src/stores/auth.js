@@ -12,6 +12,7 @@ export const useAuthStore = defineStore('auth', () => {
   function clear() { user.value = null; sessionStorage.removeItem('user') }
 
   async function login(email, password) {
+    setLoggingOut(false)  // ← 이 줄 추가
     // '/api/auth/login' 이 아니라 '/auth/login' — baseURL이 '/api'를 이미 포함
     const res = await httpRequester.post('/auth/login', { email, password })
     const { userId, name, role } = res.data.resultData
@@ -29,7 +30,7 @@ export const useAuthStore = defineStore('auth', () => {
       await httpRequester.post('/auth/logout')
     } catch (e) { /* 멱등 처리라 실패 무시 */ }
     clear()
-    setLoggingOut(false)
+    //setLoggingOut(false)
   }
 
   return { user, isLoggedIn, role, login, logout, setUser, clear }

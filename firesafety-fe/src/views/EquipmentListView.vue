@@ -3,9 +3,14 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
 import ConfirmModal from '../components/ConfirmModal.vue'
+import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
+const auth = useAuthStore()
 const panels = ref([])
+// PanelListRes엔 siteId만 있고 현장명이 없어서(Swagger 확인) /sites와 조인 — SUPER_ADMIN만 여러 현장이 섞여
+// 보이므로 이 컬럼도 SUPER_ADMIN에게만 노출(ADMIN/GENERAL은 자기 현장만 보여서 불필요)
+const sitesById = ref({})
 const status = ref('')
 const keyword = ref('') // PanelListReq엔 keyword 파라미터가 없어서(Swagger 확인) 불러온 목록을 클라이언트에서 필터링
 const appliedKeyword = ref('')
@@ -35,8 +40,12 @@ async function load() {
   loading.value = true
   const params = {}
   if (status.value) params.status = status.value
-  const res = await httpRequester.get('/panels', { params }) // siteId/status만 지원(Swagger 확인)
-  panels.value = res.data.resultData
+  const [panelsRes, sitesRes] = await Promise.all([
+    httpRequester.get('/panels', { params }), // siteId/status만 지원(Swagger 확인)
+    httpRequester.get('/sites'),
+  ])
+  panels.value = panelsRes.data.resultData
+  sitesById.value = Object.fromEntries(sitesRes.data.resultData.map((s) => [s.siteId, s]))
   selected.value = []
   page.value = 0
   loading.value = false
@@ -111,6 +120,7 @@ async function confirmBulkDelete() {
           <th style="padding:8px;"><input type="checkbox" :checked="allSelected" @change="toggleSelectAll" /></th>
           <th style="padding:8px;">장비번호</th>
           <th style="padding:8px;">설비명</th>
+          <th v-if="auth.role === 'SUPER_ADMIN'" style="padding:8px;">현장</th>
           <th style="padding:8px;">상태</th>
           <th style="padding:8px;">마지막 일시</th>
           <th style="padding:8px;"></th>
@@ -121,6 +131,7 @@ async function confirmBulkDelete() {
           <td style="padding:8px;" @click.stop><input type="checkbox" v-model="selected" :value="p.panelId" /></td>
           <td style="padding:8px;">{{ p.mNo || '-' }}</td>
           <td style="padding:8px;">{{ p.name }}</td>
+          <td v-if="auth.role === 'SUPER_ADMIN'" style="padding:8px;">{{ sitesById[p.siteId]?.name ?? '-' }}</td>
           <td style="padding:8px;">
             <span class="badge" :style="{ background: STATUS_COLOR[p.status] }">
               {{ STATUS_LABEL[p.status] ?? p.status }}
@@ -132,7 +143,7 @@ async function confirmBulkDelete() {
           </td>
         </tr>
         <tr v-if="!filteredPanels.length">
-          <td colspan="6" style="padding:16px;text-align:center;color:var(--color-text-muted);">설비가 없습니다.</td>
+          <td :colspan="auth.role === 'SUPER_ADMIN' ? 7 : 6" style="padding:16px;text-align:center;color:var(--color-text-muted);">설비가 없습니다.</td>
         </tr>
       </tbody>
     </table>

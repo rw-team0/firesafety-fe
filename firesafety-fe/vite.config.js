@@ -41,12 +41,12 @@ export default defineConfig({
     proxy: {
       '/api': {
         //target: 'http://localhost:8080', // 실제 백엔드 주소로 변경
-        target: 'http://192.168.0.59:8080', // 실제 백엔드 주소로 변경
+        target: 'http://192.168.0.34:8080', // 실제 백엔드 주소로 변경
         changeOrigin: true,
       },
       '/ws': {
         //target: 'http://localhost:8080',
-        target: 'ws://192.168.0.59:8080',
+        target: 'ws://192.168.0.34:8080',
         ws: true,
         changeOrigin: true,
       },
@@ -58,11 +58,11 @@ export default defineConfig({
     port: 4173,
     proxy: {
       '/api': {
-        target: 'http://192.168.0.59:8080',
+        target: 'http://192.168.0.34:8080',
         changeOrigin: true,
       },
       '/ws': {
-        target: 'ws://192.168.0.59:8080',
+        target: 'ws://192.168.0.34:8080',
         ws: true,
         changeOrigin: true,
       },
