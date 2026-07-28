@@ -518,7 +518,7 @@ onMounted(async () => {
           <h3 style="margin:0;">분전반 목록</h3>
           <button class="btn btn-danger" style="margin-left:auto;" :disabled="!selectedPanelIds.length" @click="showPanelBulkDeleteConfirm = true">선택 삭제</button>
         </div>
-        <p v-if="managedPanelsLoading" style="color:var(--color-text-muted);">불러오는 중...</p>
+        <p v-if="managedPanelsLoading" style="color:var(--color-text-muted);"><span class="spinner"></span>불러오는 중...</p>
         <table v-else style="width:100%;border-collapse:collapse;">
           <thead>
             <tr style="text-align:left;border-bottom:1px solid var(--color-border);">

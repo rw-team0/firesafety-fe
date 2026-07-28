@@ -68,7 +68,7 @@ function formatDateTime(v) {
   <div>
     <h2 style="margin-top:0;">대시보드</h2>
 
-    <div v-if="loading" style="color:var(--color-text-muted);">불러오는 중...</div>
+    <div v-if="loading" style="color:var(--color-text-muted);"><span class="spinner"></span>불러오는 중...</div>
     <div v-else-if="loadError" class="banner banner-danger">
       대시보드 데이터를 불러오지 못했습니다.
       <button class="btn" style="margin-left:8px;" @click="loadSummary">다시 시도</button>

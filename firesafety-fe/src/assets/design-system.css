@@ -17,6 +17,24 @@
   --radius-lg: 10px;
 }
 
+/* 가벼운 로딩 스피너 — "불러오는 중..." 텍스트 옆에 붙여서 쓰는 용도.
+   전체화면 반투명 오버레이 대신 텍스트 자리에 작게 넣는 방식으로 통일 */
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  vertical-align: -2px;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: none; }
+}
+
 .card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);

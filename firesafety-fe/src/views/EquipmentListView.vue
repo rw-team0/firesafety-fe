@@ -113,7 +113,7 @@ async function confirmBulkDelete() {
       <button class="btn btn-danger" :disabled="!selected.length" @click="showBulkDeleteConfirm = true">선택 삭제</button>
     </div>
 
-    <p v-if="loading" style="color:var(--color-text-muted);">불러오는 중...</p>
+    <p v-if="loading" style="color:var(--color-text-muted);"><span class="spinner"></span>불러오는 중...</p>
     <table v-else style="width:100%;border-collapse:collapse;">
       <thead>
         <tr style="text-align:left;border-bottom:1px solid var(--color-border);">

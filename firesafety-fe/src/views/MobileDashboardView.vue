@@ -49,7 +49,7 @@ function goToPanel(panelId) {
 
 <template>
   <div class="page">
-    <p v-if="loading" class="muted center">불러오는 중...</p>
+    <p v-if="loading" class="muted center"><span class="spinner"></span>불러오는 중...</p>
     <template v-else>
       <section>
         <h3 class="section-title">현재 정보 확인</h3>

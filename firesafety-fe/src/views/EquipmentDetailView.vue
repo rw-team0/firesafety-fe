@@ -136,7 +136,7 @@ async function saveEdit() {
 </script>
 
 <template>
-  <div v-if="loading">불러오는 중...</div>
+  <div v-if="loading"><span class="spinner"></span>불러오는 중...</div>
   <div v-else-if="panel">
     <div style="display:flex;align-items:center;margin-bottom:16px;">
       <h2 style="margin:0;">장비/회로 상세</h2>

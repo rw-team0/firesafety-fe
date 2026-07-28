@@ -97,7 +97,7 @@ onMounted(async () => {
       </select>
     </div>
 
-    <p v-if="loading" class="muted center">불러오는 중...</p>
+    <p v-if="loading" class="muted center"><span class="spinner"></span>불러오는 중...</p>
     <template v-else>
       <div v-if="alerts.length" class="alert-list">
         <div v-for="a in alerts" :key="a.alertId" class="alert-card" @click="openPanel(a.panelName, a)">
@@ -122,7 +122,7 @@ onMounted(async () => {
           <button class="btn" @click="closeDetail">닫기</button>
         </div>
 
-        <p v-if="detailLoading" class="muted center" style="padding:20px;">불러오는 중...</p>
+        <p v-if="detailLoading" class="muted center" style="padding:20px;"><span class="spinner"></span>불러오는 중...</p>
         <div v-else class="sheet-body">
           <div v-if="selectedAlert" class="alert-banner">
             <span class="badge" :style="{ background: STATUS_COLOR[selectedAlert.status] }">{{ STATUS_LABEL[selectedAlert.status] ?? selectedAlert.status }}</span>

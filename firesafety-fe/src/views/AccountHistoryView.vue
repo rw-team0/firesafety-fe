@@ -170,7 +170,7 @@ async function restore(userId) {
       <button class="btn" :disabled="!selected.length" @click="exportExcel">선택 출력</button>
     </div>
 
-    <p v-if="loading" style="color:var(--color-text-muted);">불러오는 중...</p>
+    <p v-if="loading" style="color:var(--color-text-muted);"><span class="spinner"></span>불러오는 중...</p>
     <template v-else>
       <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
         <colgroup>
