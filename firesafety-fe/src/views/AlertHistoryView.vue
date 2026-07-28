@@ -112,7 +112,11 @@ const filteredAlerts = computed(() => {
   )
 })
 
-// ── 미처리 조치 목록 ──────────────────────────────────────────────────
+// ── 미처리 조치 목록(2026-07-27 추가 → 같은 날 속도 문제로 주석 처리, 삭제 아님) ──
+// 전량 조회 방식(/alerts 페이지 순회)이 실사용에서 너무 느려서 잠정 비활성화함.
+// 나중에 다시 켤 거면 페이지 크기(FETCH_SIZE)를 더 키우거나, 백엔드에 "가장 오래된 미확인/확인됨 N건"을
+// 서버에서 직접 정렬해 주는 API를 새로 요청하는 쪽으로 접근하는 게 나을 것 같음.
+/*
 // "완전성"(빠뜨리는 게 없어야 한다) 목적이라, 화면 기본 필터(최근 7일 등)에 걸리면 안 됨 —
 // 그래서 from/to 없이 status만으로 따로 조회한다(위 filters.value와는 별개의 조회).
 // RESOLVED가 아닌 것만 필요한데 AlertListReq의 status는 값 하나만 받아서, UNCONFIRMED/CONFIRMED
@@ -136,7 +140,9 @@ function isOverdue(alert) {
 // /alerts를 페이지 순회하며 전량 받아오는 공용 로직(설비 관리이력 화면과 동일한 패턴).
 // 여기선 status 하나만 바뀌어가며 두 번 호출한다.
 async function fetchAllAlertsByStatus(status) {
-  const FETCH_SIZE = 100
+  // 100이면 미처리 건수가 조금만 많아도 요청이 여러 번 왕복해서 느려짐 — 설비 관리이력 화면과
+  // 동일하게 1000으로 키워서 보통은 요청 한 번(상태당)으로 끝나게 함(정렬 정확성은 그대로 유지)
+  const FETCH_SIZE = 1000
   let all = []
   let fetchPage = 0
   let total = Infinity
@@ -187,6 +193,7 @@ function goToPendingPage(p) {
 
 // 요약 배너용 집계는 화면에 실제로 보여주는 상위 N건이 아니라 전체 기준이어야 "놓친 게 없는지" 정확히 알 수 있음
 const pendingOverdueCount = computed(() => pendingList.value.filter(isOverdue).length)
+*/
 
 async function loadSitesAndPanels() {
   const [sitesRes, panelsRes] = await Promise.all([
@@ -234,7 +241,7 @@ async function runBulkAction() {
   }
   uiAlert.show(`선택한 ${count}건이 ${action === 'confirm' ? '확인' : '조치'} 처리되었습니다.`)
   load()
-  loadPendingList() // 상태가 바뀐 건이 있으니 미처리 목록도 같이 갱신
+  // loadPendingList() // 미처리 조치 목록 기능 자체를 주석 처리해서 같이 비활성화(위 스크립트 상단 참고)
 }
 
 function openDetail(alert) {
@@ -253,7 +260,7 @@ async function runAction() {
   detail.value = null
   uiAlert.show(`상태가 ${STATUS_LABEL.UNCONFIRMED} → ${STATUS_LABEL.CONFIRMED}(으)로 변경되었습니다.`)
   load()
-  loadPendingList()
+  // loadPendingList() // 미처리 조치 목록 기능 자체를 주석 처리해서 같이 비활성화(위 스크립트 상단 참고)
 }
 
 async function submitResolve() {
@@ -264,7 +271,7 @@ async function submitResolve() {
   detail.value = null
   uiAlert.show(`상태가 ${STATUS_LABEL.CONFIRMED} → ${STATUS_LABEL.RESOLVED}(으)로 변경되었습니다.`)
   load()
-  loadPendingList()
+  // loadPendingList() // 미처리 조치 목록 기능 자체를 주석 처리해서 같이 비활성화(위 스크립트 상단 참고)
 }
 
 async function exportExcel(onlySelected) {
@@ -290,7 +297,7 @@ async function confirmExport() {
 }
 
 onMounted(async () => {
-  await Promise.all([load(), loadSitesAndPanels(), loadPendingList()])
+  await Promise.all([load(), loadSitesAndPanels()]) // loadPendingList()는 미처리 조치 목록 비활성화로 제외
   // 대시보드에서 알림 클릭 시 넘어온 경우, 해당 알림 상세팝업 자동 오픈
   const targetId = route.query.alertId
   if (targetId) {
@@ -304,8 +311,10 @@ onMounted(async () => {
   <div>
     <h2 style="margin-top:0;">알림 이력</h2>
 
-    <!-- 탭: 미처리 건수는 "알림 이력" 탭에 있어도 눈에 띄어야 완전성 취지가 유지되므로,
-         카운트를 탭 라벨 자체에 항상 보여준다(탭을 안 눌러도 몇 건 밀려있는지 보임) -->
+    <!-- 미처리 조치 목록 탭 + 요약 배너(2026-07-27 추가 → 같은 날 속도 문제로 주석 처리, 삭제 아님.
+         스크립트 상단의 관련 상태/함수도 같이 주석 처리해뒀음) 탭이 없어져서 "알림 이력"만 남음
+    탭: 미처리 건수는 "알림 이력" 탭에 있어도 눈에 띄어야 완전성 취지가 유지되므로,
+         카운트를 탭 라벨 자체에 항상 보여준다(탭을 안 눌러도 몇 건 밀려있는지 보임)
     <div style="display:flex;gap:8px;margin-bottom:16px;border-bottom:1px solid var(--color-border);padding-bottom:12px;">
       <button class="btn" :class="{ 'btn-primary': activeTab === 'history' }" @click="activeTab = 'history'">알림 이력</button>
       <button class="btn" :class="{ 'btn-primary': activeTab === 'pending' }" @click="activeTab = 'pending'">
@@ -314,25 +323,50 @@ onMounted(async () => {
       </button>
     </div>
 
-    <!-- 미처리 조치 목록 탭: 위쪽 기간 필터(기본 최근 7일)와 무관하게 항상 전체 기간의
-         미확인/확인됨(=아직 조치완료 안 됨) 건을 따로 보여준다. 완전성 목적이라 필터에 가려지면 안 됨 -->
+    미처리 조치 목록 탭: 위쪽 기간 필터(기본 최근 7일)와 무관하게 항상 전체 기간의
+         미확인/확인됨(=아직 조치완료 안 됨) 건을 따로 보여준다. 완전성 목적이라 필터에 가려지면 안 됨
     <div v-if="activeTab === 'pending'" class="card" style="padding:16px 18px;margin-bottom:20px;">
       <p v-if="pendingListLoading" style="color:var(--color-text-muted);margin:0;"><span class="spinner"></span>불러오는 중...</p>
-      <template v-else-if="pendingList.length">
-        <div
-          v-for="a in pagedPendingList"
-          :key="a.alertId"
-          style="display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:6px;cursor:pointer;"
-          :style="isOverdue(a) ? { borderLeft: '3px solid var(--color-danger)', background: 'rgba(236,34,31,.05)' } : { borderLeft: '3px solid transparent' }"
-          @click="openDetail(a)"
-        >
-          <span v-if="isOverdue(a)" class="badge" style="background:var(--color-danger);flex:none;">지연</span>
-          <span class="badge" :style="{ background: STATUS_COLOR[a.status], flex: 'none' }">{{ STATUS_LABEL[a.status] ?? a.status }}</span>
-          <span style="flex:1;">{{ siteNameFor(a.panelName) }} · {{ a.panelName }} · {{ TYPE_LABEL[a.type] ?? a.type }}</span>
-          <span style="font-size:12px;color:var(--color-text-muted);flex:none;">경과 {{ Math.floor(elapsedHours(a.triggeredAt)) }}시간</span>
-        </div>
-        <p style="color:var(--color-text-muted);font-size:12px;margin:8px 0 0;">총 {{ pendingList.length }}건</p>
-        <div style="display:flex;justify-content:center;align-items:center;gap:4px;margin-top:10px;">
+      <template v-else>
+        "알림 이력" 표와 동일한 컬럼 구성(발생일시/현장/분전반/회로/유형/상태) + 경과시간 컬럼만 추가
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="text-align:left;border-bottom:1px solid var(--color-border);">
+              <th style="padding:8px;">발생일시</th>
+              <th style="padding:8px;">현장</th>
+              <th style="padding:8px;">분전반</th>
+              <th style="padding:8px;">회로</th>
+              <th style="padding:8px;">유형</th>
+              <th style="padding:8px;">상태</th>
+              <th style="padding:8px;">경과</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="a in pagedPendingList" :key="a.alertId"
+              style="border-bottom:1px solid var(--color-border);cursor:pointer;"
+              :style="isOverdue(a) ? { background: 'rgba(236,34,31,.05)' } : {}"
+              @click="openDetail(a)"
+            >
+              지연 건은 첫 셀에 좌측 빨간 테두리(border-collapse에서 tr 자체 테두리는 안정적으로 안 그려져서 td에 직접 줌)
+              <td :style="{ padding: '8px', borderLeft: isOverdue(a) ? '3px solid var(--color-danger)' : '3px solid transparent' }">{{ formatDateTime(a.triggeredAt) }}</td>
+              <td style="padding:8px;">{{ siteNameFor(a.panelName) }}</td>
+              <td style="padding:8px;">{{ a.panelName }}</td>
+              <td style="padding:8px;">{{ a.circuitNo != null ? `채널 ${a.circuitNo}` : '-' }}</td>
+              <td style="padding:8px;">{{ TYPE_LABEL[a.type] ?? a.type }}</td>
+              <td style="padding:8px;">
+                <span class="badge" :style="{ background: STATUS_COLOR[a.status] }">{{ STATUS_LABEL[a.status] ?? a.status }}</span>
+                <span v-if="isOverdue(a)" class="badge" style="background:var(--color-danger);margin-left:4px;">지연</span>
+              </td>
+              <td style="padding:8px;color:var(--color-text-muted);font-size:12px;">{{ Math.floor(elapsedHours(a.triggeredAt)) }}시간</td>
+            </tr>
+            <tr v-if="!pendingList.length">
+              <td colspan="7" style="padding:16px;text-align:center;color:var(--color-text-muted);">미처리 건이 없습니다.</td>
+            </tr>
+          </tbody>
+        </table>
+        <p v-if="pendingList.length" style="color:var(--color-text-muted);font-size:12px;margin:8px 0 0;">총 {{ pendingList.length }}건</p>
+        <div v-if="pendingList.length" style="display:flex;justify-content:center;align-items:center;gap:4px;margin-top:10px;">
           <button class="btn" :disabled="pendingPage === 0" @click="goToPendingPage(0)">&laquo;</button>
           <button class="btn" :disabled="pendingPage === 0" @click="goToPendingPage(pendingPage - 1)">&lsaquo;</button>
           <button
@@ -346,11 +380,9 @@ onMounted(async () => {
           <button class="btn" :disabled="pendingPage >= pendingTotalPages - 1" @click="goToPendingPage(pendingTotalPages - 1)">&raquo;</button>
         </div>
       </template>
-      <p v-else style="color:var(--color-text-muted);margin:0;">미처리 건이 없습니다.</p>
     </div>
+    -->
 
-    <!-- 알림 이력 탭: 기존 필터+표+페이지네이션(변경 없음) -->
-    <template v-if="activeTab === 'history'">
     <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
       <input v-model="keyword" placeholder="현장/분전반/유형 검색" class="field-input" style="margin-bottom:0;width:180px;" @keyup.enter="search" />
       <button class="btn" @click="search">검색</button>
@@ -425,7 +457,6 @@ onMounted(async () => {
       <button class="btn" :disabled="page >= totalPages - 1" @click="goToPage(page + 1)">&rsaquo;</button>
       <button class="btn" :disabled="page >= totalPages - 1" @click="goToPage(totalPages - 1)">&raquo;</button>
     </div>
-    </template>
 
     <!-- 분전반 상세확인 팝업 -->
     <div v-if="detail" class="modal-overlay" @click.self="detail=null">
