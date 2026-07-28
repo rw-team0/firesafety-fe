@@ -1,46 +1,53 @@
 /* 프론트엔드 개발가이드 3절 팔레트 + 피그마 와이어프레임(밝은 회색/흰 카드 톤) 기준 공용 디자인 토큰.
    상태색(success/warning/danger/offline)과 사이드바 배경만 가이드에 명시되어 있고,
-   accent(강조색)는 가이드에 없어서 와이어프레임에 나오는 무채색 검정 버튼 톤으로 통일함. */
+   accent(강조색)는 가이드에 없어서 와이어프레임에 나오는 무채색 검정 버튼 톤으로 통일함.
+   여기 :root 변수를 바꾸면 그 변수를 쓰는 앱 전체 요소가 한 번에 바뀜(화면별 인라인 style이 대부분
+   var(--color-xxx) 형태로 이 값들을 그대로 참조하고 있음) — 아래 각 변수 옆에 실제로 어디서 쓰이는지 적어둠 */
 :root {
-  --color-success: #14ae5c;
-  --color-warning: #e8b931;
-  --color-danger: #ec221f;
-  --color-offline: #787878;
-  --color-bg: #f3f3f3;
-  --color-surface: #ffffff;
-  --color-border: #e0e0e0;
-  --color-text: #222222;
-  --color-text-muted: #767676;
-  --color-accent: #4b4b4b;
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 10px;
+  --color-success: #14ae5c;   /* 분전반/회로 "정상" 상태색, 알림 "조치됨" 뱃지, 계정이력 CREATE/RESTORE 뱃지, 통계 도넛차트 */
+  --color-warning: #e8b931;   /* 분전반/회로 "주의" 상태색, 알림 "확인됨" 뱃지, 계정이력 UPDATE 뱃지, 통계 일자별 경보 막대그래프 */
+  --color-danger: #ec221f;    /* 분전반/회로 "위험" 상태색, 알림 "미확인" 뱃지, 삭제 버튼(.btn-danger), 에러 배너, 위험발생/삭제확인 팝업 헤더, "지연" 뱃지 */
+  --color-offline: #787878;   /* 분전반 "통신두절" 상태색, 계정이력 PASSWORD_RESET 뱃지 */
+  --color-bg: #f3f3f3;        /* 사이드바 배경, 각종 진행률바/트랙의 중립 배경, 임계값 카드 초기 배경 */
+  --color-surface: #ffffff;   /* 카드·버튼·입력창·모달 패널의 기본 배경(흰색) — 거의 모든 컴포넌트가 참조 */
+  --color-border: #e0e0e0;    /* 카드·버튼·입력창·표 셀 테두리 전반, 구분선 */
+  --color-text: #222222;      /* 기본 본문/제목 텍스트 색 */
+  --color-text-muted: #767676;/* 보조 설명 텍스트, 안내문구, placeholder류, "불러오는 중"/"데이터 없음" 문구 */
+  --color-accent: #4b4b4b;    /* 주 액션 버튼(.btn-primary) 배경, 입력창 포커스 테두리, 사이드바 현재메뉴 강조, 페이지네이션 현재 페이지, 체크박스 accent-color */
+  --radius-sm: 4px;   /* .badge(뱃지)의 둥글기 */
+  --radius-md: 8px;   /* .card/.btn/.field-input/.modal-close 등 대부분 컴포넌트의 기본 둥글기 */
+  --radius-lg: 10px;  /* .modal-panel(팝업 박스)의 둥글기 — 다른 것보다 살짝 더 둥글게 */
 }
 
 /* 가벼운 로딩 스피너 — "불러오는 중..." 텍스트 옆에 붙여서 쓰는 용도.
-   전체화면 반투명 오버레이 대신 텍스트 자리에 작게 넣는 방식으로 통일 */
+   전체화면 반투명 오버레이 대신 텍스트 자리에 작게 넣는 방식으로 통일.
+   지금은 StatisticsView.vue 두 곳에만 적용돼 있고, 다른 화면의 "불러오는 중" 문구에도
+   <span class="spinner"></span>만 앞에 붙이면 동일하게 적용됨(점진적으로 확대 예정) */
 .spinner {
   display: inline-block;
   width: 14px;
   height: 14px;
   margin-right: 6px;
   border: 2px solid var(--color-border);
-  border-top-color: var(--color-accent);
+  border-top-color: var(--color-accent); /* 이 색만 다르게 해서 빙글빙글 도는 것처럼 보이게 함 */
   border-radius: 50%;
   vertical-align: -2px;
   animation: spin .7s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) {
-  .spinner { animation: none; }
+  .spinner { animation: none; } /* 시스템에서 "동작 줄이기"를 켜둔 사용자에게는 회전 애니메이션 생략 */
 }
 
+/* 흰색 박스형 컨테이너. 로그인 카드, 통계/대시보드 카드, 설비관리 좌측 폼/우측 목록 박스,
+   알림 상세팝업 안의 리스트 행 등 화면 전반의 "카드" 단위가 전부 이 클래스를 씀 */
 .card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
 }
 
+/* 모든 버튼의 기본 모양(테두리 있는 흰 버튼). 여기를 바꾸면 앱 전체 버튼 크기/폰트가 같이 바뀜 */
 .btn {
   padding: 10px 16px;
   border-radius: var(--radius-md);
@@ -52,10 +59,13 @@
   cursor: pointer;
 }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
-input[type="checkbox"] { accent-color: var(--color-accent); }
-.btn-primary { background: var(--color-accent); border-color: var(--color-accent); color: #fff; }
-.btn-danger { background: var(--color-danger); border-color: var(--color-danger); color: #fff; }
+input[type="checkbox"] { accent-color: var(--color-accent); } /* 표 헤더 전체선택, 벌크삭제 체크박스 등 앱 전체 체크박스 색 */
+.btn-primary { background: var(--color-accent); border-color: var(--color-accent); color: #fff; } /* 저장/등록/확인 같은 주 액션 버튼 */
+.btn-danger { background: var(--color-danger); border-color: var(--color-danger); color: #fff; } /* 삭제류 버튼(ConfirmModal danger 확인 버튼 포함) */
 
+/* 상태·유형 뱃지의 공통 모양(둥근 알약형, 흰 글씨). 배경색은 이 클래스가 아니라
+   각 화면에서 :style="{ background: ... }"로 상황별 색(위 --color-xxx)을 인라인으로 지정함 —
+   여기서 바꾸면 알림 상태/유형, 분전반 상태, 계정이력 action, "지연" 표시 등 뱃지 전부의 크기/모양이 바뀜 */
 .badge {
   display: inline-block;
   padding: 2px 8px;
@@ -64,6 +74,8 @@ input[type="checkbox"] { accent-color: var(--color-accent); }
   color: #fff;
 }
 
+/* 폼 라벨/입력창 공통 스타일. 로그인, 계정 등록/수정, 현장·분전반·회로 등록/수정 등
+   거의 모든 입력폼이 이 두 클래스를 씀 */
 .field-label {
   display: block;
   font-size: 12px;
@@ -81,22 +93,26 @@ input[type="checkbox"] { accent-color: var(--color-accent); }
   margin-bottom: 16px;
   box-sizing: border-box;
 }
-.field-input:focus { outline: none; border-color: var(--color-accent); }
+.field-input:focus { outline: none; border-color: var(--color-accent); } /* 입력창 클릭(포커스) 시 테두리색만 강조로 바뀜 */
 
+/* 에러/경고/안내 메시지 박스. 로그인 실패, 세션만료 안내, 폼 검증 에러(현장명 미입력 등)에서 씀 */
 .banner {
   font-size: 12px;
   padding: 10px 12px;
   border-radius: var(--radius-md);
   margin-bottom: 16px;
 }
-.banner-danger { background: rgba(236, 34, 31, .1); border: 1px solid rgba(236, 34, 31, .3); color: var(--color-danger); }
-.banner-warn { background: rgba(232, 185, 49, .14); border: 1px solid rgba(232, 185, 49, .35); color: #8a6a1a; }
-.banner-info { background: rgba(20, 174, 92, .1); border: 1px solid rgba(20, 174, 92, .3); color: var(--color-success); text-align: center; }
+.banner-danger { background: rgba(236, 34, 31, .1); border: 1px solid rgba(236, 34, 31, .3); color: var(--color-danger); } /* 에러(로그인 실패, 저장 실패 등) */
+.banner-warn { background: rgba(232, 185, 49, .14); border: 1px solid rgba(232, 185, 49, .35); color: #8a6a1a; } /* 경고(세션 만료 안내 등) */
+.banner-info { background: rgba(20, 174, 92, .1); border: 1px solid rgba(20, 174, 92, .3); color: var(--color-success); text-align: center; } /* 단순 안내(현재 실사용처 없음, 예비용) */
 
+/* 팝업(모달) 공통 구조 5종 — ConfirmModal.vue/AlertModal.vue 공용 컴포넌트뿐 아니라
+   각 화면에서 직접 마크업한 모달(위험발생 팝업, 알림 상세팝업, 현장수정/임계값설정 모달 등)까지
+   앱 전체 모달 9곳이 전부 이 클래스들을 재사용함 — 여기 바꾸면 모든 팝업이 한 번에 바뀜 */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, .5);
+  background: rgba(0, 0, 0, .5); /* 팝업 뒤 화면을 어둡게 덮는 배경 */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -105,20 +121,20 @@ input[type="checkbox"] { accent-color: var(--color-accent); }
 /* 전역 알림 모달(AlertModal)이 ConfirmModal 위에 뜰 수 있도록 z-index를 한 단계 높게 둔 변형 */
 .modal-overlay-top { z-index: 200; }
 .modal-panel {
-  width: 360px;
+  width: 360px;   /* 팝업 박스 기본 너비 — 화면별로 style="width:..."로 덮어쓰는 경우도 있음(현장수정 380px, 임계값설정/알림상세 420px 등) */
   background: var(--color-surface);
   border-radius: var(--radius-lg);
   overflow: hidden;
 }
 .modal-header {
-  position: relative;
-  padding: 14px 40px 14px 18px;
+  position: relative;       /* 우상단 X버튼(.modal-close)을 절대위치로 앉히기 위한 기준점 */
+  padding: 14px 40px 14px 18px; /* 오른쪽 패딩이 넓은 건 X버튼 자리를 비워두는 것 */
   font-weight: 700;
   font-size: 16px;
   color: var(--color-text);
   border-bottom: 1px solid var(--color-border);
 }
-.modal-header.danger { background: var(--color-danger); color: #fff; border-bottom: none; }
+.modal-header.danger { background: var(--color-danger); color: #fff; border-bottom: none; } /* 위험발생 팝업, 삭제 확인(danger) 팝업의 빨간 헤더 */
 .modal-close {
   position: absolute;
   top: 8px;
@@ -127,14 +143,14 @@ input[type="checkbox"] { accent-color: var(--color-accent); }
   height: 28px;
   border: none;
   background: none;
-  color: inherit;
+  color: inherit; /* 헤더 글자색을 그대로 물려받음 — danger 헤더에서는 자동으로 흰색 */
   font-size: 18px;
   line-height: 1;
   cursor: pointer;
   border-radius: var(--radius-md);
 }
 .modal-close:hover { background: rgba(0, 0, 0, .08); }
-.modal-header.danger .modal-close:hover { background: rgba(255, 255, 255, .2); }
+.modal-header.danger .modal-close:hover { background: rgba(255, 255, 255, .2); } /* danger 헤더에서는 밝은 hover로 대비 유지 */
 .modal-body { padding: 18px; }
-.modal-body p { color: var(--color-text-muted); font-size: 13px; margin: 0 0 16px; white-space: pre-line; }
-.modal-actions { display: flex; justify-content: center; gap: 8px; }
+.modal-body p { color: var(--color-text-muted); font-size: 13px; margin: 0 0 16px; white-space: pre-line; } /* 팝업 본문 문단(메시지/안내) 텍스트 스타일 — 폼(label/input) 위주 팝업엔 영향 없음 */
+.modal-actions { display: flex; justify-content: center; gap: 8px; } /* 팝업 하단 버튼줄, 항상 가운데 정렬 */
