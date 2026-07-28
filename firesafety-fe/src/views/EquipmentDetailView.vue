@@ -202,26 +202,26 @@ async function saveEdit() {
     <h3>환경</h3>
     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;">
       <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...thresholdCardStyle(panel.temperature, panel.tempThreshold, panel.overheatAlarm) }">
-        <div style="font-size:12px;color:var(--color-text-muted);">온도</div>
+        <div style="font-size:12px;color:var(--color-text-muted);">🌡️ 온도</div>
         <div style="font-size:16px;font-weight:700;">{{ panel.temperature != null ? panel.temperature + '°C' : '-' }}</div>
       </div>
       <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...thresholdCardStyle(panel.humidity, panel.humidityThreshold, panel.humidityAlarm) }">
-        <div style="font-size:12px;color:var(--color-text-muted);">습도</div>
+        <div style="font-size:12px;color:var(--color-text-muted);">💧 습도</div>
         <div style="font-size:16px;font-weight:700;">{{ panel.humidity != null ? panel.humidity + '%' : '-' }}</div>
       </div>
       <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...thresholdCardStyle(panel.fireRaw, panel.fireThreshold, panel.fireAlarm) }">
-        <div style="font-size:12px;color:var(--color-text-muted);">불꽃센서</div>
+        <div style="font-size:12px;color:var(--color-text-muted);">🔥 불꽃센서</div>
         <div style="font-size:16px;font-weight:700;">{{ panel.fireRaw ?? '-' }}</div>
       </div>
       <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...thresholdCardStyle(panel.gasRaw, panel.gasThreshold, panel.gasAlarm) }">
-        <div style="font-size:12px;color:var(--color-text-muted);">가스센서</div>
+        <div style="font-size:12px;color:var(--color-text-muted);">💨 가스센서</div>
         <div style="font-size:16px;font-weight:700;">{{ panel.gasRaw ?? '-' }}</div>
       </div>
       <!-- 누설전류 실시간 카드 — panel.leakMa(실시간 값)/panel.leakageAlarm(하드웨어 알람)이 아직 백엔드 응답에 없어서 주석 처리(삭제 아님).
            추가되면 아래 주석만 풀면 됨 -->
       
       <div class="card" :style="{ padding: '12px 14px', height: '87px', boxSizing: 'border-box', ...thresholdCardStyle(panel.leakMa, panel.leakMaThreshold, panel.leakageAlarm) }">
-        <div style="font-size:12px;color:var(--color-text-muted);">누설전류</div>
+        <div style="font-size:12px;color:var(--color-text-muted);">⚡ 누설전류</div>
         <div style="font-size:16px;font-weight:700;">{{ panel.leakMa != null ? panel.leakMa + 'mA' : '-' }}</div>
       </div>
      
