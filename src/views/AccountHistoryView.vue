@@ -3,75 +3,87 @@ import { ref, computed, onMounted } from 'vue'
 import httpRequester from '../utils/httpRequester'
 import { ROLE_LABEL } from '../constants/roles'
 import ActionResultModal from '../components/ActionResultModal.vue'
+import BaseCard from '../components/common/BaseCard.vue'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import BasePagination from '../components/common/BasePagination.vue'
+import PageHeader from '../components/common/PageHeader.vue'
+import StatusBadge from '../components/common/StatusBadge.vue'
 import { useUiAlertStore } from '../stores/uiAlert'
 
 const uiAlert = useUiAlertStore()
 
-// 실제 백엔드 Swagger(192.168.0.31:8080/swagger-ui, 2026-07-23 확인) 결과: GET /users/audit-logs 존재(파라미터 없음,
-// 페이지네이션도 없이 전체 배열 반환) — 그래서 페이지네이션은 클라이언트에서 처리. 단 UserAuditLogRes엔
-// targetName/actorName/content가 없고 targetUserId/actorUserId/beforeData/afterData만 내려와서,
-// /users 목록과 조인해 이름을 붙임(단 대상이 이미 삭제된 계정이면 /users엔 없으므로 "#id"로만 표시됨)
+// 이력/계정 조인
 const logs = ref([])
 const usersById = ref({})
 const loading = ref(false)
 const restoringId = ref(null)
 const restoreResult = ref(null)
+
+// 페이지 상태
 const page = ref(0)
 const PAGE_SIZE = 13
 const selected = ref([])
+
+// 검색 상태
 const keyword = ref('')
 const appliedKeyword = ref('')
 // 기간 프리셋 드롭다운 → 달력(from/to 날짜입력)으로 교체하면서 period는 더 이상 안 씀(주석 처리, 삭제 아님)
 // const period = ref('')
-// 다른 이력 화면(통계/설비 관리이력/알림 이력)과 동일하게 기본 기간을 최근 7일로 설정
+
+// 기본 기간
 function isoDate(d) { return d.toISOString().slice(0, 10) }
 const today = new Date()
 const weekAgo = new Date(today)
 weekAgo.setDate(weekAgo.getDate() - 7)
 const filters = ref({ from: isoDate(weekAgo), to: isoDate(today) })
 
-const badgeStyle = {
-  CREATE: { background: 'var(--color-success)' },
-  UPDATE: { background: 'var(--color-warning)' },
-  DELETE: { background: 'var(--color-danger)' },
-  RESTORE: { background: 'var(--color-success)' },
-  PASSWORD_RESET: { background: 'var(--color-offline)' },
-}
+// 작업 뱃지 색
+const ACTION_BADGE_VARIANT = { CREATE: 'success', UPDATE: 'info', DELETE: 'danger', RESTORE: 'success', PASSWORD_RESET: 'neutral' }
 
+// 이력 시각
 function formatDateTime(v) {
   return v ? v.replace('T', ' ') : '-'
 }
 
+// 결과 표시 시각
 function formatResultDateTime(date = new Date()) {
   const pad = (v) => String(v).padStart(2, '0')
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
 }
 
+// 대상 계정명
 function targetLabel(userId) {
   const u = usersById.value[userId]
   return u ? `${u.name} (${ROLE_LABEL[u.role] ?? u.role})` : `#${userId}`
 }
+
+// 결과 계정명
 function userResultLabel(data) {
   if (!data) return ''
   return data.name && data.email ? `${data.name} (${data.email})` : data.name || data.email || ''
 }
+
+// 복구 대상명
 function restoreTargetLabel(userId) {
   const user = usersById.value[userId]
   if (user) return userResultLabel(user)
   const log = logs.value.find((item) => item.action === 'DELETE' && item.targetUserId === userId)
   return userResultLabel(log?.beforeData) || userResultLabel(log?.afterData) || `#${userId}`
 }
+
+// 관리 계정명
 function actorLabel(userId) {
   if (userId == null) return '시스템'
   const u = usersById.value[userId]
   return u ? u.name : `#${userId}`
 }
-// 계정의 의미 있는 필드만 골라서 보여준다(userId/createdBy/deletedAt 같은 내부 필드는 제외)
+
+// 표시 필드
 const FIELD_LABEL = { name: '이름', role: '권한', email: '이메일', phone: '연락처' }
+
+// 변경 요약
 function summarize(log) {
-  // 수정은 beforeData/afterData가 둘 다 있어서 실제로 바뀐 필드만 "전 → 후"로 보여줄 수 있음
+  // 수정 필드 비교
   if (log.action === 'UPDATE' && log.beforeData && log.afterData) {
     const changed = Object.keys(FIELD_LABEL).filter((k) => log.beforeData[k] !== log.afterData[k])
     if (!changed.length) return '변경사항 없음'
@@ -86,8 +98,7 @@ function summarize(log) {
     .join(', ')
 }
 
-// GET /users/audit-logs엔 검색/기간 파라미터가 아예 없어서(전체 배열만 반환) 둘 다 클라이언트에서 처리 —
-// FacilityAuditHistoryView.vue와 동일한 필터바 구성(검색+기간)을 여기도 맞춤
+// 목록 안에서 검색
 function search() {
   appliedKeyword.value = keyword.value.trim()
   page.value = 0
@@ -113,9 +124,13 @@ function search() {
 //   }
 //   page.value = 0
 // }
+
+// 날짜 변경
 function onDateFilterChange() {
   page.value = 0
 }
+
+// 필터 적용
 const filteredLogs = computed(() => {
   let result = logs.value
   if (appliedKeyword.value) {
@@ -127,22 +142,29 @@ const filteredLogs = computed(() => {
   return result
 })
 
+// 페이지 계산
 const totalPages = computed(() => Math.max(1, Math.ceil(filteredLogs.value.length / PAGE_SIZE)))
 const pagedLogs = computed(() => filteredLogs.value.slice(page.value * PAGE_SIZE, (page.value + 1) * PAGE_SIZE))
+
+// 페이지 이동
 function goToPage(p) {
   if (p < 0 || p >= totalPages.value) return
   page.value = p
 }
 
+// 전체 이력 선택
 const allSelected = computed(() => filteredLogs.value.length > 0 && selected.value.length === filteredLogs.value.length)
 function toggleSelectAll() {
   selected.value = allSelected.value ? [] : filteredLogs.value.map((l) => l.auditId)
 }
+
+// 엑셀 안내
 function exportExcel() {
-  // 계정 관리이력 엑셀 출력 전용 API는 없음(Swagger 확인, /alerts/export 같은 전용 엔드포인트가 없음)
+  // 출력 API 없음
   uiAlert.show('계정 관리이력 엑셀 출력 기능은 아직 백엔드에 구현되어 있지 않습니다.')
 }
 
+// 이력 목록 조회
 async function load() {
   loading.value = true
   const [logsRes, usersRes] = await Promise.all([
@@ -157,10 +179,11 @@ async function load() {
 }
 onMounted(load)
 
+// 계정 복구
 async function restore(userId) {
   const restoredAccountName = restoreTargetLabel(userId)
   restoringId.value = null
-  await httpRequester.patch(`/users/${userId}/restore`) // Swagger 확인: PATCH /api/users/{userId}/restore
+  await httpRequester.patch(`/users/${userId}/restore`)
   restoreResult.value = {
     itemName: restoredAccountName,
     time: formatResultDateTime(),
@@ -170,72 +193,96 @@ async function restore(userId) {
 </script>
 
 <template>
-  <div>
-    <div style="display:flex;align-items:center;gap:10px;">
-      <h2 style="margin:0;">계정 관리 이력</h2>
-      <router-link class="btn" style="margin-left:auto;" to="/settings/accounts">계정목록으로</router-link>
-    </div>
+  <div class="account-history-page">
+    <PageHeader
+      title="계정 관리 이력"
+      subtitle="계정 생성, 수정, 삭제 및 복구 이력을 확인합니다."
+    >
+      <template #actions>
+        <button class="btn" @click="exportExcel">전체 출력</button>
+        <router-link class="btn" to="/settings/accounts">계정목록으로</router-link>
+      </template>
+    </PageHeader>
 
-    <div style="display:flex;gap:8px;margin:16px 0;align-items:center;flex-wrap:wrap;">
-      <input v-model="keyword" placeholder="대상계정/관리계정명 검색" class="field-input" style="margin-bottom:0;width:200px;" @keyup.enter="search" />
-      <button class="btn" @click="search">검색</button>
-      <input v-model="filters.from" type="date" class="field-input" style="margin-bottom:0;width:150px;" @change="onDateFilterChange" />
-      <span style="color:var(--color-text-muted);">~</span>
-      <input v-model="filters.to" type="date" class="field-input" style="margin-bottom:0;width:150px;" @change="onDateFilterChange" />
-      <button class="btn" style="margin-left:auto;" @click="exportExcel">전체 출력</button>
-      <button class="btn" :disabled="!selected.length" @click="exportExcel">선택 출력</button>
-    </div>
+    <BaseCard>
+      <template #header>
+        <!-- 검색 조건 -->
+        <div class="account-history-filter">
+          <input
+            v-model="keyword"
+            placeholder="대상계정/관리계정명 검색"
+            class="field-input account-history-filter__keyword"
+            @keyup.enter="search"
+          />
+          <button class="btn" @click="search">검색</button>
+          <input v-model="filters.from" type="date" class="field-input account-history-filter__date" @change="onDateFilterChange" />
+          <span class="account-history-filter__dash">~</span>
+          <input v-model="filters.to" type="date" class="field-input account-history-filter__date" @change="onDateFilterChange" />
+          <button class="btn account-history-filter__selected" :disabled="!selected.length" @click="exportExcel">선택 출력</button>
+        </div>
+      </template>
 
-    <p v-if="loading" style="color:var(--color-text-muted);"><span class="spinner"></span>불러오는 중...</p>
-    <template v-else>
-      <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
-        <colgroup>
-          <col style="width:36px;">
-          <col style="width:20%;">
-          <col style="width:14%;">
-          <col style="width:9%;">
-          <col>
-          <col style="width:150px;">
-          <col style="width:80px;">
-        </colgroup>
-        <thead>
-          <tr style="text-align:left;border-bottom:1px solid var(--color-border);">
-            <th style="padding:8px;"><input type="checkbox" :checked="allSelected" @change="toggleSelectAll" /></th>
-            <th style="padding:8px;">대상계정</th>
-            <th style="padding:8px;">관리계정</th>
-            <th style="padding:8px;">관리유형</th>
-            <th style="padding:8px;">변경 내용</th>
-            <th style="padding:8px;">관리시점</th>
-            <th style="padding:8px;"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="log in pagedLogs" :key="log.auditId" style="border-bottom:1px solid var(--color-border);">
-            <td style="padding:8px;"><input type="checkbox" v-model="selected" :value="log.auditId" /></td>
-            <td style="padding:8px;overflow-wrap:break-word;">{{ targetLabel(log.targetUserId) }}</td>
-            <td style="padding:8px;overflow-wrap:break-word;">{{ actorLabel(log.actorUserId) }}</td>
-            <td style="padding:8px;">
-              <span class="badge" :style="{ background: badgeStyle[log.action]?.background }">{{ log.actionLabel ?? log.action }}</span>
-            </td>
-            <td style="padding:8px;font-size:12px;color:var(--color-text-muted);overflow-wrap:break-word;">{{ summarize(log) }}</td>
-            <td style="padding:8px;">{{ formatDateTime(log.createdAt) }}</td>
-            <td style="padding:8px;">
-              <button v-if="log.action === 'DELETE'" class="btn" @click="restoringId = log.targetUserId">복구</button>
-            </td>
-          </tr>
-          <tr v-if="!filteredLogs.length">
-            <td colspan="7" style="padding:16px;text-align:center;color:var(--color-text-muted);">이력이 없습니다.</td>
-          </tr>
-        </tbody>
-      </table>
+      <p v-if="loading" class="account-history-loading"><span class="spinner"></span>불러오는 중...</p>
+      <template v-else>
+        <!-- 이력 목록 -->
+        <div class="account-history-table-wrap">
+          <table class="account-history-table">
+            <colgroup>
+              <col class="account-history-table__check">
+              <col class="account-history-table__target">
+              <col class="account-history-table__actor">
+              <col class="account-history-table__action">
+              <col>
+              <col class="account-history-table__time">
+              <col class="account-history-table__restore">
+            </colgroup>
+            <thead>
+              <tr>
+                <th><input type="checkbox" :checked="allSelected" @change="toggleSelectAll" /></th>
+                <th>대상계정</th>
+                <th>관리계정</th>
+                <th>관리유형</th>
+                <th>변경 내용</th>
+                <th>관리시점</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="log in pagedLogs" :key="log.auditId">
+                <td><input type="checkbox" v-model="selected" :value="log.auditId" /></td>
+                <td class="account-history-table__wrap">{{ targetLabel(log.targetUserId) }}</td>
+                <td class="account-history-table__wrap">{{ actorLabel(log.actorUserId) }}</td>
+                <td>
+                  <StatusBadge :variant="ACTION_BADGE_VARIANT[log.action] || 'neutral'">
+                    {{ log.actionLabel ?? log.action }}
+                  </StatusBadge>
+                </td>
+                <td class="account-history-table__summary">{{ summarize(log) }}</td>
+                <td>{{ formatDateTime(log.createdAt) }}</td>
+                <td>
+                  <button v-if="log.action === 'DELETE'" class="btn" @click="restoringId = log.targetUserId">복구</button>
+                </td>
+              </tr>
+              <tr v-if="!filteredLogs.length">
+                <td colspan="7" class="account-history-table__empty">이력이 없습니다.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </template>
 
-      <BasePagination
-        :current-page="page"
-        :total-pages="totalPages"
-        :total-items="filteredLogs.length"
-        @change="goToPage"
-      />
-    </template>
+      <template #footer>
+        <!-- 페이지네이션 -->
+        <div v-if="!loading" class="account-history-pagination">
+          <BasePagination
+            :current-page="page"
+            :total-pages="totalPages"
+            :total-items="filteredLogs.length"
+            @change="goToPage"
+          />
+        </div>
+      </template>
+    </BaseCard>
 
     <ConfirmModal v-if="restoringId" title="계정 복구 확인"
       message="이 계정을 복구하시겠습니까?"
@@ -251,3 +298,125 @@ async function restore(userId) {
     />
   </div>
 </template>
+
+<style scoped>
+.account-history-page {
+  min-height: 100%;
+}
+
+.account-history-filter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  flex-wrap: wrap;
+}
+
+.account-history-filter__keyword,
+.account-history-filter__date {
+  margin-bottom: 0;
+}
+
+.account-history-filter__keyword {
+  width: 200px;
+}
+
+.account-history-filter__date {
+  width: 150px;
+}
+
+.account-history-filter__dash {
+  color: var(--color-text-secondary);
+}
+
+.account-history-filter__selected {
+  margin-left: auto;
+}
+
+.account-history-loading {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-body);
+}
+
+.account-history-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.account-history-table {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.account-history-table__check {
+  width: 36px;
+}
+
+.account-history-table__target {
+  width: 20%;
+}
+
+.account-history-table__actor {
+  width: 14%;
+}
+
+.account-history-table__action {
+  width: 9%;
+}
+
+.account-history-table__time {
+  width: 150px;
+}
+
+.account-history-table__restore {
+  width: 80px;
+}
+
+.account-history-table th {
+  padding: var(--space-12) var(--space-8);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  text-align: left;
+  font-size: var(--font-size-caption);
+  font-weight: 700;
+}
+
+.account-history-table td {
+  padding: var(--space-12) var(--space-8);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-body);
+}
+
+.account-history-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.account-history-table__wrap,
+.account-history-table__summary {
+  overflow-wrap: break-word;
+}
+
+.account-history-table__summary {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-caption);
+}
+
+.account-history-table__empty {
+  padding: var(--space-24);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.account-history-pagination :deep(.base-pagination) {
+  margin-top: 0;
+}
+
+@media (max-width: 720px) {
+  .account-history-filter__selected {
+    margin-left: 0;
+  }
+}
+</style>
