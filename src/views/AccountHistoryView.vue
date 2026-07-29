@@ -4,6 +4,7 @@ import httpRequester from '../utils/httpRequester'
 import { ROLE_LABEL } from '../constants/roles'
 import ActionResultModal from '../components/ActionResultModal.vue'
 import ConfirmModal from '../components/ConfirmModal.vue'
+import BasePagination from '../components/common/BasePagination.vue'
 import { useUiAlertStore } from '../stores/uiAlert'
 
 const uiAlert = useUiAlertStore()
@@ -19,7 +20,6 @@ const restoringId = ref(null)
 const restoreResult = ref(null)
 const page = ref(0)
 const PAGE_SIZE = 13
-const PAGE_WINDOW = 10
 const selected = ref([])
 const keyword = ref('')
 const appliedKeyword = ref('')
@@ -128,11 +128,6 @@ const filteredLogs = computed(() => {
 })
 
 const totalPages = computed(() => Math.max(1, Math.ceil(filteredLogs.value.length / PAGE_SIZE)))
-const pageNumbers = computed(() => {
-  const start = Math.floor(page.value / PAGE_WINDOW) * PAGE_WINDOW
-  const end = Math.min(start + PAGE_WINDOW, totalPages.value)
-  return Array.from({ length: end - start }, (_, i) => start + i)
-})
 const pagedLogs = computed(() => filteredLogs.value.slice(page.value * PAGE_SIZE, (page.value + 1) * PAGE_SIZE))
 function goToPage(p) {
   if (p < 0 || p >= totalPages.value) return
@@ -234,20 +229,12 @@ async function restore(userId) {
         </tbody>
       </table>
 
-      <p style="color:var(--color-text-muted);font-size:12px;margin:8px 0 0;">총 {{ filteredLogs.length }}건</p>
-      <div style="display:flex;justify-content:center;align-items:center;gap:4px;margin-top:10px;">
-        <button class="btn" :disabled="page === 0" @click="goToPage(0)">&laquo;</button>
-        <button class="btn" :disabled="page === 0" @click="goToPage(page - 1)">&lsaquo;</button>
-        <button
-          v-for="p in pageNumbers"
-          :key="p"
-          class="btn"
-          :style="p === page ? { background:'var(--color-accent)', color:'#fff' } : {}"
-          @click="goToPage(p)"
-        >{{ p + 1 }}</button>
-        <button class="btn" :disabled="page >= totalPages - 1" @click="goToPage(page + 1)">&rsaquo;</button>
-        <button class="btn" :disabled="page >= totalPages - 1" @click="goToPage(totalPages - 1)">&raquo;</button>
-      </div>
+      <BasePagination
+        :current-page="page"
+        :total-pages="totalPages"
+        :total-items="filteredLogs.length"
+        @change="goToPage"
+      />
     </template>
 
     <ConfirmModal v-if="restoringId" title="계정 복구 확인"
