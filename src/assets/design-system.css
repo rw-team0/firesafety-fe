@@ -17,6 +17,13 @@
   --radius-sm: 4px;   /* .badge(뱃지)의 둥글기 */
   --radius-md: 8px;   /* .card/.btn/.field-input/.modal-close 등 대부분 컴포넌트의 기본 둥글기 */
   --radius-lg: 10px;  /* .modal-panel(팝업 박스)의 둥글기 — 다른 것보다 살짝 더 둥글게 */
+
+  /* z-index 토큰. 이번 단계에서는 신규 BaseModal만 사용하고, 기존 인라인/전역 z-index 값은 그대로 둔다. */
+  --z-dropdown: 50;
+  --z-sticky-header: 80;
+  --z-modal-overlay: 100;
+  --z-modal: 101;
+  --z-toast: 200;
 }
 
 /* 가벼운 로딩 스피너 — "불러오는 중..." 텍스트 옆에 붙여서 쓰는 용도.

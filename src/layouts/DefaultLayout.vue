@@ -107,7 +107,7 @@ function formatDateTime(v) {
       <main style="flex:1;min-width:0;overflow-y:auto;padding:22px;"><router-view :key="$route.fullPath" /></main>
     </div>
 
-    <ConfirmModal v-if="showLogoutConfirm" title="로그아웃"
+    <ConfirmModal :visible="showLogoutConfirm" title="로그아웃"
       message="로그아웃 하시겠습니까?"
       @confirm="doLogout" @cancel="showLogoutConfirm = false" />
 
