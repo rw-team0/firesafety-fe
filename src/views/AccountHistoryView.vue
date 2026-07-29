@@ -9,6 +9,7 @@ import BasePagination from '../components/common/BasePagination.vue'
 import PageHeader from '../components/common/PageHeader.vue'
 import StatusBadge from '../components/common/StatusBadge.vue'
 import { useUiAlertStore } from '../stores/uiAlert'
+import { formatDateTime, formatResultDateTime, isoDate } from '@/utils/formatters'
 
 const uiAlert = useUiAlertStore()
 
@@ -31,7 +32,6 @@ const appliedKeyword = ref('')
 // const period = ref('')
 
 // 기본 기간
-function isoDate(d) { return d.toISOString().slice(0, 10) }
 const today = new Date()
 const weekAgo = new Date(today)
 weekAgo.setDate(weekAgo.getDate() - 7)
@@ -39,17 +39,6 @@ const filters = ref({ from: isoDate(weekAgo), to: isoDate(today) })
 
 // 작업 뱃지 색
 const ACTION_BADGE_VARIANT = { CREATE: 'success', UPDATE: 'info', DELETE: 'danger', RESTORE: 'success', PASSWORD_RESET: 'neutral' }
-
-// 이력 시각
-function formatDateTime(v) {
-  return v ? v.replace('T', ' ') : '-'
-}
-
-// 결과 표시 시각
-function formatResultDateTime(date = new Date()) {
-  const pad = (v) => String(v).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
-}
 
 // 대상 계정명
 function targetLabel(userId) {

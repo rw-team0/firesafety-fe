@@ -6,6 +6,7 @@ import ConfirmModal from '../components/ConfirmModal.vue'
 import ActionResultModal from '../components/ActionResultModal.vue'
 import BaseModal from '../components/common/BaseModal.vue'
 import { useAuthStore } from '../stores/auth'
+import { formatResultDateTime } from '@/utils/formatters'
 
 // 이 화면의 현장/분전반/회로 수정·삭제 API는 실제 백엔드 Swagger(192.168.0.31:8080/swagger-ui, 2026-07-23 확인)로
 // 전부 검증됨: PUT/DELETE /sites/{id}, PUT/DELETE /panels/{id}, DELETE /circuits/{id}.
@@ -126,10 +127,6 @@ function openSiteDetail(s) {
   editAddressQuery.value = ''
   editAddressResults.value = []
   showEditSiteModal.value = true
-}
-function formatResultDateTime(date = new Date()) {
-  const pad = (v) => String(v).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
 }
 function showFacilityActionResult({ type = 'success', title, subtitle, itemName, actionLabel }) {
   facilityActionResult.value = {

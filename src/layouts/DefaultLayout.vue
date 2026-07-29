@@ -7,6 +7,7 @@ import { useRouter } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import BaseModal from '../components/common/BaseModal.vue'
+import { formatDateTime } from '@/utils/formatters'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -65,9 +66,6 @@ function goToAlert(alertId) {
   router.push(`/alerts?alertId=${alertId}`)
 }
 
-function formatDateTime(v) {
-  return v ? v.replace('T', ' ') : '-'
-}
 </script>
 
 <template>

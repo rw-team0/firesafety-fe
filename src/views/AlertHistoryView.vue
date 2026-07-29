@@ -7,6 +7,7 @@ import BaseModal from '../components/common/BaseModal.vue'
 import BasePagination from '../components/common/BasePagination.vue'
 import { useAuthStore } from '../stores/auth'
 import { useUiAlertStore } from '../stores/uiAlert'
+import { formatDateTime, isoDate } from '@/utils/formatters'
 
 const route = useRoute()
 const auth = useAuthStore()
@@ -23,7 +24,6 @@ const sites = ref([])
 const panelSiteByName = ref({})
 
 // 다른 이력 화면(통계/설비 관리이력/계정 관리이력)과 동일하게 기본 기간을 최근 7일로 설정
-function isoDate(d) { return d.toISOString().slice(0, 10) }
 const today = new Date()
 const weekAgo = new Date(today)
 weekAgo.setDate(weekAgo.getDate() - 7)
@@ -42,10 +42,6 @@ const TYPE_LABEL = { ARC: '아크', OVERHEAT: '과열', LEAKAGE: '누설', OVERC
 
 function siteNameFor(panelName) {
   return panelSiteByName.value[panelName] ?? '-'
-}
-
-function formatDateTime(v) {
-  return v ? v.replace('T', ' ') : '-'
 }
 
 // 기간 프리셋 드롭다운 → 달력(from/to 날짜입력)으로 교체하면서 더 이상 안 씀(주석 처리, 삭제 아님)

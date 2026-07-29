@@ -3,6 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import httpRequester from '../utils/httpRequester'
 import BasePagination from '../components/common/BasePagination.vue'
 import { useUiAlertStore } from '../stores/uiAlert'
+import { formatDateTime, isoDate } from '@/utils/formatters'
 
 const uiAlert = useUiAlertStore()
 
@@ -21,7 +22,6 @@ const sitesById = ref({})
 const panelsById = ref({})
 const usersById = ref({})
 
-function isoDate(d) { return d.toISOString().slice(0, 10) }
 const today = new Date()
 const weekAgo = new Date(today)
 weekAgo.setDate(weekAgo.getDate() - 7)
@@ -53,9 +53,6 @@ const FIELD_LABEL_BY_TYPE = {
   CIRCUIT: { channelNo: '채널번호', loadType: '부하종류' },
 }
 
-function formatDateTime(v) {
-  return v ? v.replace('T', ' ') : '-'
-}
 // 2026-07-24 와이어프레임(S-015) 기준: "이름"은 단독 명칭이 아니라 상위 계층까지 붙인 경로형
 // ("레이월드02-분전반03", "레이월드01-분전반01-회로10")으로 표시. 대상이 이미 삭제됐으면 /sites·/panels
 // 목록 조회로는 이름을 못 찾으므로, beforeData/afterData(로그 자체가 들고 있는 스냅샷)의 name/siteId/panelId를

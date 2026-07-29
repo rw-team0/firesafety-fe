@@ -3,6 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
 import { useMonitoringStore } from '../stores/monitoring'
+import { formatDateTime } from '@/utils/formatters'
 
 const router = useRouter()
 const monitoring = useMonitoringStore()
@@ -59,9 +60,6 @@ function goToAlert(alertId) {
   router.push(`/alerts?alertId=${alertId}`)
 }
 
-function formatDateTime(v) {
-  return v ? v.replace('T', ' ') : '-'
-}
 </script>
 
 <template>

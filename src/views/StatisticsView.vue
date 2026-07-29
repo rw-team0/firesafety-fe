@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import httpRequester from '../utils/httpRequester'
 import { useUiAlertStore } from '../stores/uiAlert'
+import { isoDate } from '@/utils/formatters'
 
 const uiAlert = useUiAlertStore()
 
@@ -9,7 +10,6 @@ const uiAlert = useUiAlertStore()
 // - GET /statistics는 period가 아니라 siteId(선택)/from/to(날짜) 파라미터를 씀 — period는 실재하지 않았음
 // - 응답도 dailyAlertCounts/circuitRiskRanking 평면 배열이 아니라 alerts/diagnoses/panels 3개 집계 객체 구조
 // - 리포트 생성 기능은 제공하지 않기로 함(POST /reports API도 없음) — 관련 UI 전부 제거
-function isoDate(d) { return d.toISOString().slice(0, 10) }
 const today = new Date()
 const weekAgo = new Date(today)
 weekAgo.setDate(weekAgo.getDate() - 7)

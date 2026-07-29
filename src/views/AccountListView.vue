@@ -7,6 +7,7 @@ import ConfirmModal from '../components/ConfirmModal.vue'
 import PageHeader from '../components/common/PageHeader.vue'
 import StatusBadge from '../components/common/StatusBadge.vue'
 import { ROLE_LABEL } from '../constants/roles'
+import { formatResultDateTime } from '@/utils/formatters'
 
 const users = ref([])
 const selected = ref([])
@@ -32,12 +33,6 @@ async function loadUsers() {
   // 전역 실패 알림
 }
 onMounted(loadUsers)
-
-// 결과 표시 시각
-function formatResultDateTime(date = new Date()) {
-  const pad = (v) => String(v).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
-}
 
 // 계정 표시 이름
 function userLabel(user) {

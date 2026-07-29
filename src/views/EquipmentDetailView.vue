@@ -6,6 +6,7 @@ import { createMonitoringSocket } from '../utils/monitoringSocket'
 import ActionResultModal from '../components/ActionResultModal.vue'
 import BaseModal from '../components/common/BaseModal.vue'
 import { useAuthStore } from '../stores/auth'
+import { formatDateTime, formatResultDateTime } from '@/utils/formatters'
 
 const route = useRoute()
 const auth = useAuthStore()
@@ -23,15 +24,6 @@ let active = true // 언마운트 후 뒤늦게 도착한 콜백이 API를 호�
 // 백엔드 PanelService.resolveCircuitStatus 매트릭스로 이미 계산되어 오므로 프론트는 그대로 표시만 한다.
 const STATUS_LABEL = { NORMAL: '정상', CAUTION: '주의', RISK: '위험', OFFLINE: '오프라인' }
 const STATUS_COLOR = { NORMAL: 'var(--color-success)', CAUTION: 'var(--color-warning)', RISK: 'var(--color-danger)', OFFLINE: 'var(--color-offline)' }
-
-function formatDateTime(v) {
-  return v ? v.replace('T', ' ') : '-'
-}
-
-function formatResultDateTime(date = new Date()) {
-  const pad = (v) => String(v).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
-}
 
 function circuitCardStyle(status) {
   if (!status || status === 'NORMAL') return {}
