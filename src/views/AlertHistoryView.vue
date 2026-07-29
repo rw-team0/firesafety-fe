@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import BaseModal from '../components/common/BaseModal.vue'
+import BasePagination from '../components/common/BasePagination.vue'
 import { useAuthStore } from '../stores/auth'
 import { useUiAlertStore } from '../stores/uiAlert'
 
@@ -86,14 +87,6 @@ function goToPage(p) {
 }
 
 const totalPages = computed(() => Math.max(1, Math.ceil(totalElements.value / PAGE_SIZE)))
-
-// 10개씩 묶어서 "1~10", "11~20" 페이지 번호 구간을 보여줌
-const PAGE_WINDOW = 10
-const pageNumbers = computed(() => {
-  const start = Math.floor(page.value / PAGE_WINDOW) * PAGE_WINDOW
-  const end = Math.min(start + PAGE_WINDOW, totalPages.value)
-  return Array.from({ length: end - start }, (_, i) => start + i)
-})
 
 // 헤더 체크박스: 현재 페이지에 보이는 항목 기준으로 전체선택/해제
 const allSelected = computed({
@@ -444,20 +437,12 @@ onMounted(async () => {
         </tr>
       </tbody>
     </table>
-    <p style="color:var(--color-text-muted);font-size:12px;margin:8px 0 0;">총 {{ totalElements }}건</p>
-    <div style="display:flex;justify-content:center;align-items:center;gap:4px;margin-top:10px;">
-      <button class="btn" :disabled="page === 0" @click="goToPage(0)">&laquo;</button>
-      <button class="btn" :disabled="page === 0" @click="goToPage(page - 1)">&lsaquo;</button>
-      <button
-        v-for="p in pageNumbers"
-        :key="p"
-        class="btn"
-        :style="p === page ? { background:'var(--color-accent)', color:'#fff' } : {}"
-        @click="goToPage(p)"
-      >{{ p + 1 }}</button>
-      <button class="btn" :disabled="page >= totalPages - 1" @click="goToPage(page + 1)">&rsaquo;</button>
-      <button class="btn" :disabled="page >= totalPages - 1" @click="goToPage(totalPages - 1)">&raquo;</button>
-    </div>
+    <BasePagination
+      :current-page="page"
+      :total-pages="totalPages"
+      :total-items="totalElements"
+      @change="goToPage"
+    />
 
     <!-- 분전반 상세확인 팝업 -->
     <BaseModal
