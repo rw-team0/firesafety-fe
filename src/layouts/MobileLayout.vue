@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useMonitoringStore } from '../stores/monitoring'
@@ -11,6 +11,17 @@ const route = useRoute()
 const auth = useAuthStore()
 const monitoring = useMonitoringStore()
 const showLogoutConfirm = ref(false)
+const riskPopupInfoRows = computed(() => {
+  const popup = monitoring.riskPopup
+  if (!popup) return []
+
+  const circuitLabel = popup.circuitName ?? (popup.circuitNo != null ? `채널 ${popup.circuitNo}` : '-')
+  return [
+    { label: '장비명', value: popup.panelName ?? '-' },
+    { label: '회로', value: circuitLabel },
+    { label: '상태', value: '위험' },
+  ]
+})
 
 // 레이아웃은 로그인 세션 내내 떠있어서(자식 화면만 바뀜) 위험 감지를 여기서 한 번만 시작
 onMounted(() => monitoring.start())
@@ -63,21 +74,18 @@ function goToPanel() {
     />
 
     <!-- 위험 등급 전환 팝업. 레이아웃에 있어서 대시보드/알림이력 어느 화면이든 뜬다 -->
-    <div v-if="monitoring.riskPopup" class="modal-overlay" @click.self="monitoring.clearRiskPopup()">
-      <div class="modal-panel">
-        <div class="modal-header danger">
-          위험 발생
-          <button class="modal-close" aria-label="닫기" @click="monitoring.clearRiskPopup()">×</button>
-        </div>
-        <div class="modal-body">
-          <p>{{ monitoring.riskPopup.panelName }}에서 위험 상태가 감지되었습니다.</p>
-          <p>상세보기 시 바로 해당 알림이 확인 처리 됩니다.</p>
-          <div class="modal-actions">
-            <button class="btn btn-primary" @click="goToPanel()">확인</button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <MobileModal
+      :visible="!!monitoring.riskPopup"
+      type="danger"
+      title="위험 발생"
+      :message="`${monitoring.riskPopup?.panelName ?? '-'}에서 위험 상태가 감지되었습니다.`"
+      :info-rows="riskPopupInfoRows"
+      note-text="상세보기 시 바로 해당 알림이 확인 처리 됩니다."
+      confirm-text="확인"
+      cancel-text="닫기"
+      @confirm="goToPanel"
+      @cancel="monitoring.clearRiskPopup()"
+    />
   </div>
 </template>
 
