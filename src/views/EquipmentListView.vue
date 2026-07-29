@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
 import ConfirmModal from '../components/ConfirmModal.vue'
+import BasePagination from '../components/common/BasePagination.vue'
 import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
@@ -19,7 +20,6 @@ const selected = ref([])
 const showBulkDeleteConfirm = ref(false)
 const page = ref(0) // PanelListReq엔 page/size가 없어서(Swagger 확인) 클라이언트에서 페이지네이션
 const PAGE_SIZE = 13
-const PAGE_WINDOW = 10
 
 // PanelStatus enum(백엔드가이드 6절): NORMAL/CAUTION/RISK/OFFLINE 4단계
 const STATUS_LABEL = { NORMAL: '정상', CAUTION: '주의', RISK: '위험', OFFLINE: '오프라인' }
@@ -66,11 +66,6 @@ const filteredPanels = computed(() => {
 })
 
 const totalPages = computed(() => Math.max(1, Math.ceil(filteredPanels.value.length / PAGE_SIZE)))
-const pageNumbers = computed(() => {
-  const start = Math.floor(page.value / PAGE_WINDOW) * PAGE_WINDOW
-  const end = Math.min(start + PAGE_WINDOW, totalPages.value)
-  return Array.from({ length: end - start }, (_, i) => start + i)
-})
 const pagedPanels = computed(() => filteredPanels.value.slice(page.value * PAGE_SIZE, (page.value + 1) * PAGE_SIZE))
 
 function goToPage(p) {
@@ -148,20 +143,12 @@ async function confirmBulkDelete() {
       </tbody>
     </table>
 
-    <p style="color:var(--color-text-muted);font-size:12px;margin:8px 0 0;">총 {{ filteredPanels.length }}건</p>
-    <div style="display:flex;justify-content:center;align-items:center;gap:4px;margin-top:10px;">
-      <button class="btn" :disabled="page === 0" @click="goToPage(0)">&laquo;</button>
-      <button class="btn" :disabled="page === 0" @click="goToPage(page - 1)">&lsaquo;</button>
-      <button
-        v-for="p in pageNumbers"
-        :key="p"
-        class="btn"
-        :style="p === page ? { background:'var(--color-accent)', color:'#fff' } : {}"
-        @click="goToPage(p)"
-      >{{ p + 1 }}</button>
-      <button class="btn" :disabled="page >= totalPages - 1" @click="goToPage(page + 1)">&rsaquo;</button>
-      <button class="btn" :disabled="page >= totalPages - 1" @click="goToPage(totalPages - 1)">&raquo;</button>
-    </div>
+    <BasePagination
+      :current-page="page"
+      :total-pages="totalPages"
+      :total-items="filteredPanels.length"
+      @change="goToPage"
+    />
 
     <ConfirmModal v-if="showBulkDeleteConfirm" title="설비 삭제 확인"
       message="선택한 설비를 삭제하시겠습니까? 하위 회로도 함께 비활성화됩니다." danger
