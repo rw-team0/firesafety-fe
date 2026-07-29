@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import httpRequester from '../utils/httpRequester'
+import BasePagination from '../components/common/BasePagination.vue'
 import { useUiAlertStore } from '../stores/uiAlert'
 
 const uiAlert = useUiAlertStore()
@@ -34,7 +35,6 @@ const appliedKeyword = ref('')
 // const filters = ref({ from: '', to: '' })
 const page = ref(0)
 const PAGE_SIZE = 13
-const PAGE_WINDOW = 10
 
 const TARGET_TYPE_LABEL = { SITE: '현장', PANEL: '분전반', CIRCUIT: '회로' }
 const ACTION_LABEL = { CREATE: '추가', UPDATE: '수정', DELETE: '삭제' }
@@ -146,11 +146,6 @@ const filteredLogs = computed(() => {
 })
 
 const totalPages = computed(() => Math.max(1, Math.ceil(filteredLogs.value.length / PAGE_SIZE)))
-const pageNumbers = computed(() => {
-  const start = Math.floor(page.value / PAGE_WINDOW) * PAGE_WINDOW
-  const end = Math.min(start + PAGE_WINDOW, totalPages.value)
-  return Array.from({ length: end - start }, (_, i) => start + i)
-})
 const pagedLogs = computed(() => filteredLogs.value.slice(page.value * PAGE_SIZE, (page.value + 1) * PAGE_SIZE))
 function goToPage(p) {
   if (p < 0 || p >= totalPages.value) return
@@ -234,19 +229,11 @@ onMounted(async () => {
         </tr>
       </tbody>
     </table>
-    <p style="color:var(--color-text-muted);font-size:12px;margin:8px 0 0;">총 {{ filteredLogs.length }}건</p>
-    <div style="display:flex;justify-content:center;align-items:center;gap:4px;margin-top:10px;">
-      <button class="btn" :disabled="page === 0" @click="goToPage(0)">&laquo;</button>
-      <button class="btn" :disabled="page === 0" @click="goToPage(page - 1)">&lsaquo;</button>
-      <button
-        v-for="p in pageNumbers"
-        :key="p"
-        class="btn"
-        :style="p === page ? { background:'var(--color-accent)', color:'#fff' } : {}"
-        @click="goToPage(p)"
-      >{{ p + 1 }}</button>
-      <button class="btn" :disabled="page >= totalPages - 1" @click="goToPage(page + 1)">&rsaquo;</button>
-      <button class="btn" :disabled="page >= totalPages - 1" @click="goToPage(totalPages - 1)">&raquo;</button>
-    </div>
+    <BasePagination
+      :current-page="page"
+      :total-pages="totalPages"
+      :total-items="filteredLogs.length"
+      @change="goToPage"
+    />
   </div>
 </template>
