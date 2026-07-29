@@ -3,6 +3,7 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
 import { createMonitoringSocket } from '../utils/monitoringSocket'
+import BaseModal from '../components/common/BaseModal.vue'
 import { useAuthStore } from '../stores/auth'
 import { useUiAlertStore } from '../stores/uiAlert'
 
@@ -228,70 +229,69 @@ async function saveEdit() {
     </div>
 
     <!-- 임계값 설정(수정) 모달 -->
-    <div v-if="showEditModal" class="modal-overlay" @click.self="showEditModal=false">
-      <div class="modal-panel" style="width:420px;">
-        <div class="modal-header">
-          분전반 정보/임계값 수정
-          <button class="modal-close" aria-label="닫기" @click="showEditModal=false">×</button>
+    <BaseModal
+      :visible="showEditModal"
+      title="분전반 정보/임계값 수정"
+      max-width="420px"
+      @close="showEditModal=false"
+    >
+      <div v-if="editErrorMsg" class="banner banner-danger">{{ editErrorMsg }}</div>
+
+      <label class="field-label">분전반명</label>
+      <input v-model="editForm.name" class="field-input" />
+
+      <label class="field-label">일련번호</label>
+      <input v-model="editForm.deviceSerial" class="field-input" />
+
+      <div style="display:flex;gap:12px;">
+        <div style="flex:1;">
+          <label class="field-label">회로 개수(1~10)</label>
+          <input v-model.number="editForm.circuitCount" type="number" min="1" max="10" class="field-input" />
         </div>
-        <div class="modal-body">
-          <div v-if="editErrorMsg" class="banner banner-danger">{{ editErrorMsg }}</div>
-
-          <label class="field-label">분전반명</label>
-          <input v-model="editForm.name" class="field-input" />
-
-          <label class="field-label">일련번호</label>
-          <input v-model="editForm.deviceSerial" class="field-input" />
-
-          <div style="display:flex;gap:12px;">
-            <div style="flex:1;">
-              <label class="field-label">회로 개수(1~10)</label>
-              <input v-model.number="editForm.circuitCount" type="number" min="1" max="10" class="field-input" />
-            </div>
-            <div style="flex:1;">
-              <label class="field-label">장비번호(정확히 5자리)</label>
-              <input v-model="editForm.mNo" maxlength="5" class="field-input" />
-            </div>
-          </div>
-
-          <label class="field-label">설치일</label>
-          <input v-model="editForm.installedAt" type="date" class="field-input" />
-
-          <div class="field-label" style="font-weight:600;color:var(--color-text);">주의 임계값 설정</div>
-          <p style="font-size:12px;color:var(--color-text-muted);margin:-8px 0 12px;word-break:keep-all;">설정값 이상이 30초 이상 지속되면 '주의' 상태로 전환됩니다.</p>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px;">
-            <div>
-              <label class="field-label">zct 누설전류(mA)</label>
-              <input v-model.number="editForm.leakMaThreshold" type="number" placeholder="예: 20.0" class="field-input" />
-            </div>
-            <div>
-              <label class="field-label">온도(도)</label>
-              <input v-model.number="editForm.tempThreshold" type="number" placeholder="예: 80.0" class="field-input" />
-            </div>
-            <div>
-              <label class="field-label">습도(%)</label>
-              <input v-model.number="editForm.humidityThreshold" type="number" placeholder="예: 80.0" class="field-input" />
-            </div>
-            <div>
-              <label class="field-label">과전류(A)</label>
-              <input v-model.number="editForm.overcurrentThreshold" type="number" placeholder="예: 30.0" class="field-input" />
-            </div>
-            <div>
-              <label class="field-label">가스</label>
-              <input v-model.number="editForm.gasThreshold" type="number" placeholder="예: 5000 (미입력 시 기본값 5000)" class="field-input" />
-            </div>
-            <div>
-              <label class="field-label">불꽃</label>
-              <input v-model.number="editForm.fireThreshold" type="number" placeholder="예: 5000 (미입력 시 기본값 5000)" class="field-input" />
-            </div>
-          </div>
-
-          <div class="modal-actions">
-            <button class="btn btn-primary" style="min-width:120px;" :disabled="editSubmitting" @click="saveEdit">{{ editSubmitting ? '저장 중...' : '저장' }}</button>
-            <button class="btn" style="min-width:120px;" @click="showEditModal=false">취소</button>
-          </div>
+        <div style="flex:1;">
+          <label class="field-label">장비번호(정확히 5자리)</label>
+          <input v-model="editForm.mNo" maxlength="5" class="field-input" />
         </div>
       </div>
-    </div>
+
+      <label class="field-label">설치일</label>
+      <input v-model="editForm.installedAt" type="date" class="field-input" />
+
+      <div class="field-label" style="font-weight:600;color:var(--color-text);">주의 임계값 설정</div>
+      <p style="font-size:12px;color:var(--color-text-muted);margin:-8px 0 12px;word-break:keep-all;">설정값 이상이 30초 이상 지속되면 '주의' 상태로 전환됩니다.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px;">
+        <div>
+          <label class="field-label">zct 누설전류(mA)</label>
+          <input v-model.number="editForm.leakMaThreshold" type="number" placeholder="예: 20.0" class="field-input" />
+        </div>
+        <div>
+          <label class="field-label">온도(도)</label>
+          <input v-model.number="editForm.tempThreshold" type="number" placeholder="예: 80.0" class="field-input" />
+        </div>
+        <div>
+          <label class="field-label">습도(%)</label>
+          <input v-model.number="editForm.humidityThreshold" type="number" placeholder="예: 80.0" class="field-input" />
+        </div>
+        <div>
+          <label class="field-label">과전류(A)</label>
+          <input v-model.number="editForm.overcurrentThreshold" type="number" placeholder="예: 30.0" class="field-input" />
+        </div>
+        <div>
+          <label class="field-label">가스</label>
+          <input v-model.number="editForm.gasThreshold" type="number" placeholder="예: 5000 (미입력 시 기본값 5000)" class="field-input" />
+        </div>
+        <div>
+          <label class="field-label">불꽃</label>
+          <input v-model.number="editForm.fireThreshold" type="number" placeholder="예: 5000 (미입력 시 기본값 5000)" class="field-input" />
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="modal-actions" style="padding:0 18px 18px;">
+          <button class="btn" style="min-width:120px;" @click="showEditModal=false">취소</button>
+          <button class="btn btn-primary" style="min-width:120px;" :disabled="editSubmitting" @click="saveEdit">{{ editSubmitting ? '저장 중...' : '저장' }}</button>
+        </div>
+      </template>
+    </BaseModal>
   </div>
 </template>

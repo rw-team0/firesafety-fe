@@ -1,5 +1,5 @@
 <script setup>
-import { ref, toRef } from 'vue'
+import { computed, ref, toRef } from 'vue'
 import { useModalA11y } from '../../composables/useModalA11y'
 
 const props = defineProps({
@@ -27,10 +27,15 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  maxWidth: {
+    type: String,
+    default: '',
+  },
 })
 
 const emit = defineEmits(['close'])
 const modalRef = ref(null)
+const contentStyle = computed(() => props.maxWidth ? { width: `min(100%, ${props.maxWidth})` } : undefined)
 
 function closeModal() {
   emit('close')
@@ -55,6 +60,7 @@ useModalA11y({
     <section
       ref="modalRef"
       class="base-modal__content"
+      :style="contentStyle"
       role="dialog"
       aria-modal="true"
       :aria-label="title"
