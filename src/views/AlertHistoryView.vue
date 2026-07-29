@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
 import ConfirmModal from '../components/ConfirmModal.vue'
+import BaseModal from '../components/common/BaseModal.vue'
 import { useAuthStore } from '../stores/auth'
 import { useUiAlertStore } from '../stores/uiAlert'
 
@@ -459,38 +460,47 @@ onMounted(async () => {
     </div>
 
     <!-- 분전반 상세확인 팝업 -->
-    <div v-if="detail" class="modal-overlay" @click.self="detail=null">
-      <div class="modal-panel">
-        <div class="modal-header" :style="{ background: STATUS_COLOR[detail.status], color:'#fff', borderBottom:'none' }">
-          {{ detail.panelName }} 상세
+    <BaseModal
+      :visible="!!detail"
+      :title="detail ? `${detail.panelName} 상세` : '알림 상세'"
+      @close="detail=null"
+    >
+      <template #header>
+        <div class="modal-header" :style="{ background: STATUS_COLOR[detail?.status], color:'#fff', borderBottom:'none' }">
+          {{ detail?.panelName }} 상세
           <button class="modal-close" aria-label="닫기" @click="detail=null">×</button>
         </div>
+      </template>
+
+      <template #body>
         <div class="modal-body">
-          <p>현장: {{ siteNameFor(detail.panelName) }}</p>
-          <p>회로: {{ detail.circuitNo != null ? `채널 ${detail.circuitNo}` : '-' }}</p>
-          <p>유형: {{ TYPE_LABEL[detail.type] ?? detail.type }}</p>
-          <p>상태: {{ STATUS_LABEL[detail.status] ?? detail.status }}</p>
-          <p>발생일시: {{ formatDateTime(detail.triggeredAt) }}</p>
+          <p>현장: {{ siteNameFor(detail?.panelName) }}</p>
+          <p>회로: {{ detail?.circuitNo != null ? `채널 ${detail.circuitNo}` : '-' }}</p>
+          <p>유형: {{ TYPE_LABEL[detail?.type] ?? detail?.type }}</p>
+          <p>상태: {{ STATUS_LABEL[detail?.status] ?? detail?.status }}</p>
+          <p>발생일시: {{ formatDateTime(detail?.triggeredAt) }}</p>
 
           <template v-if="resolveNoteMode">
             <label class="field-label">조치 메모(선택, 엑셀 비고란에 표시됨)</label>
             <textarea v-model="resolutionNote" rows="3" class="field-input" placeholder="예: 케이블 재접속" maxlength="500"></textarea>
           </template>
-
-          <div class="modal-actions">
-            <template v-if="resolveNoteMode">
-              <button class="btn btn-primary" @click="submitResolve">조치 완료 저장</button>
-              <button class="btn" @click="resolveNoteMode=false">취소</button>
-            </template>
-            <template v-else>
-              <button v-if="detail.status === 'UNCONFIRMED'" class="btn btn-primary" @click="requestAction('confirm')">확인 처리</button>
-              <button v-if="detail.status === 'CONFIRMED'" class="btn btn-primary" @click="resolveNoteMode=true">조치 완료</button>
-              <button class="btn" @click="detail=null">닫기</button>
-            </template>
-          </div>
         </div>
-      </div>
-    </div>
+      </template>
+
+      <template #footer>
+        <div class="modal-actions" style="padding:0 18px 18px;">
+          <template v-if="resolveNoteMode">
+            <button class="btn btn-primary" @click="submitResolve">조치 완료 저장</button>
+            <button class="btn" @click="resolveNoteMode=false">취소</button>
+          </template>
+          <template v-else>
+            <button v-if="detail?.status === 'UNCONFIRMED'" class="btn btn-primary" @click="requestAction('confirm')">확인 처리</button>
+            <button v-if="detail?.status === 'CONFIRMED'" class="btn btn-primary" @click="resolveNoteMode=true">조치 완료</button>
+            <button class="btn" @click="detail=null">닫기</button>
+          </template>
+        </div>
+      </template>
+    </BaseModal>
 
     <ConfirmModal v-if="pendingAction" title="경보 확인" message="이 경보를 확인 처리하시겠습니까?"
       @confirm="runAction" @cancel="pendingAction=null" />
