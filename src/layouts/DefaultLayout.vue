@@ -8,6 +8,7 @@ import httpRequester from '../utils/httpRequester'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import BaseModal from '../components/common/BaseModal.vue'
 import { formatDateTime } from '@/utils/formatters'
+import { ALERT_STATUS_LABELS as ALERT_STATUS_LABEL, ALERT_TYPE_LABELS as TYPE_LABEL } from '@/constants/domainLabels'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -16,9 +17,7 @@ const sidebarOpen = ref(true)  // 기본 열림 (레퍼런스 기준)
 const showLogoutConfirm = ref(false)
 function toggleSidebar() { sidebarOpen.value = !sidebarOpen.value }
 
-const ALERT_STATUS_LABEL = { UNCONFIRMED: '미확인', CONFIRMED: '확인됨', RESOLVED: '조치됨' }
 const ALERT_STATUS_COLOR = { UNCONFIRMED: 'var(--color-danger)', CONFIRMED: 'var(--color-warning)', RESOLVED: 'var(--color-success)' }
-const TYPE_LABEL = { ARC: '아크', OVERHEAT: '과열', LEAKAGE: '누설', OVERCURRENT: '과전류', HUMIDITY: '습도', GAS: '가스', FIRE: '불꽃', DOOR_OPEN: '도어열림', DEVICE_ERROR: '장비오류', COMM_LOST: '통신두절' }
 const showAlertsModal = ref(false)
 const recentAlerts = ref([])
 

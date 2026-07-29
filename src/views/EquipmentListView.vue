@@ -8,6 +8,7 @@ import BasePagination from '../components/common/BasePagination.vue'
 import PageHeader from '../components/common/PageHeader.vue'
 import StatusBadge from '../components/common/StatusBadge.vue'
 import { useAuthStore } from '../stores/auth'
+import { PANEL_STATUS_LABELS as STATUS_LABEL } from '@/constants/domainLabels'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -25,8 +26,6 @@ const page = ref(0) // PanelListReq엔 page/size가 없어서(Swagger 확인) �
 const PAGE_SIZE = 13
 
 // PanelStatus enum(백엔드가이드 6절): NORMAL/CAUTION/RISK/OFFLINE 4단계
-const STATUS_LABEL = { NORMAL: '정상', CAUTION: '주의', RISK: '위험', OFFLINE: '오프라인' }
-
 // 상대 시각
 function formatRelative(iso) {
   if (!iso) return '-'

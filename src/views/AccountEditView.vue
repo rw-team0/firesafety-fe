@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
 import ActionResultModal from '../components/ActionResultModal.vue'
 import { useAuthStore } from '../stores/auth'
+import { USER_ROLE_LABELS } from '@/constants/domainLabels'
 
 const route = useRoute()
 const router = useRouter()
@@ -17,7 +18,7 @@ const loading = ref(true)
 const errorMsg = ref('')
 const updateResult = ref(null)
 
-// FR-05-05: 대상이 ADMIN(현장관리자)이면 최고관리자만 수정 가능
+// FR-05-05: 대상이 ADMIN이면 플랫폼관리자만 수정 가능
 const forbidden = computed(() => targetRole.value === 'ADMIN' && auth.role !== 'SUPER_ADMIN')
 
 async function load() {
@@ -75,7 +76,7 @@ function goAccountList() {
   <div v-if="!loading">
     <h2 style="margin-top:0;">계정 수정</h2>
     <div class="card" style="max-width:420px;padding:24px;">
-      <div v-if="forbidden" class="banner banner-danger">403 — 이 계정은 최고관리자만 수정할 수 있습니다.</div>
+      <div v-if="forbidden" class="banner banner-danger">403 — 이 계정은 {{ USER_ROLE_LABELS.SUPER_ADMIN }}만 수정할 수 있습니다.</div>
       <div v-if="errorMsg" class="banner banner-danger">{{ errorMsg }}</div>
       <fieldset :disabled="forbidden" style="border:none;padding:0;margin:0;">
         <label class="field-label">이름</label>
@@ -88,7 +89,10 @@ function goAccountList() {
         <input v-model="form.phone" placeholder="연락처" class="field-input">
 
         <label class="field-label">권한</label>
-        <select v-model="form.role" class="field-input"><option value="GENERAL">일반</option><option value="ADMIN">관리자</option></select>
+        <select v-model="form.role" class="field-input">
+          <option value="GENERAL">{{ USER_ROLE_LABELS.GENERAL }}</option>
+          <option value="ADMIN">{{ USER_ROLE_LABELS.ADMIN }}</option>
+        </select>
 
         <label class="field-label">담당현장</label>
         <select v-model="form.siteId" class="field-input">

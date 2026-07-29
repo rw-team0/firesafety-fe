@@ -8,6 +8,7 @@ import BasePagination from '../components/common/BasePagination.vue'
 import { useAuthStore } from '../stores/auth'
 import { useUiAlertStore } from '../stores/uiAlert'
 import { formatDateTime, isoDate } from '@/utils/formatters'
+import { ALERT_STATUS_LABELS as STATUS_LABEL, ALERT_TYPE_LABELS as TYPE_LABEL } from '@/constants/domainLabels'
 
 const route = useRoute()
 const auth = useAuthStore()
@@ -36,9 +37,7 @@ const PAGE_SIZE = 13
 const keyword = ref('') // AlertListReq엔 자유검색 파라미터가 없어서 이미 불러온 목록을 클라이언트에서 필터링
 const appliedKeyword = ref('')
 
-const STATUS_LABEL = { UNCONFIRMED: '미확인', CONFIRMED: '확인됨', RESOLVED: '조치됨' }
 const STATUS_COLOR = { UNCONFIRMED: 'var(--color-danger)', CONFIRMED: 'var(--color-warning)', RESOLVED: 'var(--color-success)' }
-const TYPE_LABEL = { ARC: '아크', OVERHEAT: '과열', LEAKAGE: '누설', OVERCURRENT: '과전류', HUMIDITY: '습도', GAS: '가스', FIRE: '불꽃', DOOR_OPEN: '도어열림', DEVICE_ERROR: '장비오류', COMM_LOST: '통신두절' }
 
 function siteNameFor(panelName) {
   return panelSiteByName.value[panelName] ?? '-'

@@ -3,6 +3,12 @@ import {
   mockUsers, mockSites, mockPanels, mockCircuits, mockDiagnosis,
   mockAlerts, mockUserAuditLogs, mockFacilityAuditLogs, mockSiteAssignments, ids,
 } from './data'
+import {
+  ALERT_STATUS_LABELS as STATUS_LABEL,
+  ALERT_TYPE_LABELS as TYPE_LABEL,
+  PANEL_STATUS_LABELS as PANEL_STATUS_LABEL,
+  VERDICT_LABELS as VERDICT_LABEL,
+} from '../constants/domainLabels'
 
 // 실제 백엔드 ResultResponse<T>{resultMessage, resultData} 형태 그대로 흉내냄
 function ok(resultData, resultMessage = '성공') {
@@ -22,11 +28,6 @@ function resolveCircuitStatus(panel, circuit) {
   if (circuit.latestAiVerdict === 'ARC') return 'CAUTION'
   return 'NORMAL'
 }
-
-const TYPE_LABEL = { ARC: '아크', OVERHEAT: '과열', LEAKAGE: '누설', OVERCURRENT: '과전류', HUMIDITY: '습도', GAS: '가스', FIRE: '불꽃', DOOR_OPEN: '도어열림', DEVICE_ERROR: '장비오류', COMM_LOST: '통신두절' }
-const STATUS_LABEL = { UNCONFIRMED: '미확인', CONFIRMED: '확인됨', RESOLVED: '조치됨' }
-const PANEL_STATUS_LABEL = { NORMAL: '정상', CAUTION: '주의', RISK: '위험', OFFLINE: '오프라인' }
-const VERDICT_LABEL = { NORMAL: '정상', ARC: '아크' }
 
 function countBy(list, key, labels) {
   const counts = {}

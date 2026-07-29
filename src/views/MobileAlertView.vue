@@ -3,6 +3,7 @@ import { computed, ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
 import MobileModal from '../components/MobileModal.vue'
+import { ALERT_STATUS_LABELS as STATUS_LABEL, ALERT_TYPE_LABELS as TYPE_LABEL } from '@/constants/domainLabels'
 
 const route = useRoute()
 
@@ -12,9 +13,7 @@ const panelIdByName = ref({})
 const typeFilter = ref('')
 const statusFilter = ref('')
 
-const STATUS_LABEL = { UNCONFIRMED: '미확인', CONFIRMED: '확인됨', RESOLVED: '조치됨' }
 const STATUS_COLOR = { UNCONFIRMED: 'var(--color-danger)', CONFIRMED: 'var(--color-warning)', RESOLVED: 'var(--color-success)' }
-const TYPE_LABEL = { ARC: '아크', OVERHEAT: '과열', LEAKAGE: '누설', OVERCURRENT: '과전류', HUMIDITY: '습도', GAS: '가스', FIRE: '불꽃', DOOR_OPEN: '도어열림', DEVICE_ERROR: '장비오류', COMM_LOST: '통신두절' }
 const PANEL_STATUS_COLOR = { NORMAL: 'var(--color-success)', CAUTION: 'var(--color-warning)', RISK: 'var(--color-danger)', OFFLINE: 'var(--color-offline)' }
 
 async function load() {

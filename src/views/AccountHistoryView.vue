@@ -70,20 +70,26 @@ function actorLabel(userId) {
 // 표시 필드
 const FIELD_LABEL = { name: '이름', role: '권한', email: '이메일', phone: '연락처' }
 
+// 역할값 표시
+function formatFieldValue(field, value) {
+  if (value == null) return '-'
+  return field === 'role' ? ROLE_LABEL[value] ?? value : value
+}
+
 // 변경 요약
 function summarize(log) {
   // 수정 필드 비교
   if (log.action === 'UPDATE' && log.beforeData && log.afterData) {
     const changed = Object.keys(FIELD_LABEL).filter((k) => log.beforeData[k] !== log.afterData[k])
     if (!changed.length) return '변경사항 없음'
-    return changed.map((k) => `${FIELD_LABEL[k]}: ${log.beforeData[k] ?? '-'} → ${log.afterData[k] ?? '-'}`).join(', ')
+    return changed.map((k) => `${FIELD_LABEL[k]}: ${formatFieldValue(k, log.beforeData[k])} → ${formatFieldValue(k, log.afterData[k])}`).join(', ')
   }
 
   const data = log.action === 'DELETE' ? log.beforeData : log.afterData
   if (!data || typeof data !== 'object') return '-'
   return Object.keys(FIELD_LABEL)
     .filter((k) => data[k] !== undefined)
-    .map((k) => `${FIELD_LABEL[k]}: ${data[k] ?? '-'}`)
+    .map((k) => `${FIELD_LABEL[k]}: ${formatFieldValue(k, data[k])}`)
     .join(', ')
 }
 

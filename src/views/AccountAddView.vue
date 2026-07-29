@@ -5,6 +5,7 @@ import httpRequester from '../utils/httpRequester'
 import ActionResultModal from '../components/ActionResultModal.vue'
 import { useAuthStore } from '../stores/auth'
 import { useUiAlertStore } from '../stores/uiAlert'
+import { USER_ROLE_LABELS } from '@/constants/domainLabels'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -17,7 +18,7 @@ const emailChecked = ref(false)
 const emailAvailable = ref(null)
 const createResult = ref(null)
 
-// 최고관리자만 "관리자(현장관리자)" 계정 생성 가능
+// 플랫폼관리자 계정 생성 범위
 const availableRoles = computed(() => auth.role === 'SUPER_ADMIN' ? ['ADMIN','GENERAL'] : ['GENERAL'])
 
 onMounted(async () => {
@@ -104,7 +105,7 @@ function goAccountList() {
 
       <label class="field-label">권한</label>
       <select v-model="form.role" class="field-input">
-        <option v-for="r in availableRoles" :key="r" :value="r">{{ r==='ADMIN'?'관리자':'일반' }}</option>
+        <option v-for="r in availableRoles" :key="r" :value="r">{{ USER_ROLE_LABELS[r] ?? r }}</option>
       </select>
 
       <label class="field-label">담당현장</label>

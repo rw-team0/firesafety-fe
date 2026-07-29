@@ -4,6 +4,11 @@ import { useRouter } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
 import { useMonitoringStore } from '../stores/monitoring'
 import { formatDateTime } from '@/utils/formatters'
+import {
+  ALERT_STATUS_LABELS as ALERT_STATUS_LABEL,
+  ALERT_TYPE_LABELS as TYPE_LABEL,
+  PANEL_STATUS_LABELS as STATUS_LABEL,
+} from '@/constants/domainLabels'
 
 const router = useRouter()
 const monitoring = useMonitoringStore()
@@ -11,11 +16,8 @@ const monitoring = useMonitoringStore()
 const loading = ref(true)
 const loadError = ref(false)
 
-const STATUS_LABEL = { NORMAL: '정상', CAUTION: '주의', RISK: '위험', OFFLINE: '오프라인' }
 const STATUS_COLOR = { NORMAL: 'var(--color-success)', CAUTION: 'var(--color-warning)', RISK: 'var(--color-danger)', OFFLINE: 'var(--color-offline)' }
-const ALERT_STATUS_LABEL = { UNCONFIRMED: '미확인', CONFIRMED: '확인됨', RESOLVED: '조치됨' }
 const ALERT_STATUS_COLOR = { UNCONFIRMED: 'var(--color-danger)', CONFIRMED: 'var(--color-warning)', RESOLVED: 'var(--color-success)' }
-const TYPE_LABEL = { ARC: '아크', OVERHEAT: '과열', LEAKAGE: '누설', OVERCURRENT: '과전류', HUMIDITY: '습도', GAS: '가스', FIRE: '불꽃', DOOR_OPEN: '도어열림', DEVICE_ERROR: '장비오류', COMM_LOST: '통신두절' }
 
 // 위험 팝업/WS 연결/panelGrid는 monitoring 스토어가 레이아웃 마운트 시점에 이미 소유(어느 화면에 있든
 // 위험 감지가 되게 하려는 목적) — 이 화면은 스토어 값을 그대로 보여주고, 자기 전용 데이터(최근 알림)만 따로 관리
