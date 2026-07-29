@@ -5,6 +5,9 @@ import httpRequester from '../utils/httpRequester'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import BaseModal from '../components/common/BaseModal.vue'
 import BasePagination from '../components/common/BasePagination.vue'
+import BaseCard from '../components/common/BaseCard.vue'
+import PageHeader from '../components/common/PageHeader.vue'
+import StatusBadge from '../components/common/StatusBadge.vue'
 import { useAuthStore } from '../stores/auth'
 import { useUiAlertStore } from '../stores/uiAlert'
 import { formatDateTime, isoDate } from '@/utils/formatters'
@@ -38,6 +41,19 @@ const keyword = ref('') // AlertListReq엔 자유검색 파라미터가 없어�
 const appliedKeyword = ref('')
 
 const STATUS_COLOR = { UNCONFIRMED: 'var(--color-danger)', CONFIRMED: 'var(--color-warning)', RESOLVED: 'var(--color-success)' }
+// 경보 유형별 위험도 색
+const TYPE_BADGE_VARIANT = {
+  ARC: 'danger',
+  OVERHEAT: 'warning',
+  LEAKAGE: 'danger',
+  OVERCURRENT: 'danger',
+  HUMIDITY: 'warning',
+  GAS: 'danger',
+  FIRE: 'danger',
+  DOOR_OPEN: 'warning',
+  DEVICE_ERROR: 'warning',
+  COMM_LOST: 'warning',
+}
 
 function siteNameFor(panelName) {
   return panelSiteByName.value[panelName] ?? '-'
@@ -297,8 +313,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div>
-    <h2 style="margin-top:0;">알림 이력</h2>
+  <div class="alert-history-page">
+    <PageHeader title="알림 이력" />
 
     <!-- 미처리 조치 목록 탭 + 요약 배너(2026-07-27 추가 → 같은 날 속도 문제로 주석 처리, 삭제 아님.
          스크립트 상단의 관련 상태/함수도 같이 주석 처리해뒀음) 탭이 없어져서 "알림 이력"만 남음
@@ -372,72 +388,82 @@ onMounted(async () => {
     </div>
     -->
 
-    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
-      <input v-model="keyword" placeholder="현장/분전반/유형 검색" class="field-input" style="margin-bottom:0;width:180px;" @keyup.enter="search" />
-      <button class="btn" @click="search">검색</button>
-      <input v-model="filters.from" type="date" class="field-input" style="margin-bottom:0;width:150px;" @change="resetAndLoad" />
-      <span style="color:var(--color-text-muted);">~</span>
-      <input v-model="filters.to" type="date" class="field-input" style="margin-bottom:0;width:150px;" @change="resetAndLoad" />
-      <select v-if="auth.role === 'SUPER_ADMIN'" v-model="filters.siteId" class="field-input" style="margin-bottom:0;width:140px;" @change="resetAndLoad">
-        <option value="">전체 현장</option>
-        <option v-for="s in sites" :key="s.siteId" :value="s.siteId">{{ s.name }}</option>
-      </select>
-      <select v-model="filters.type" class="field-input" style="margin-bottom:0;width:140px;" @change="resetAndLoad">
-        <option value="">전체 유형</option>
-        <option v-for="(label, key) in TYPE_LABEL" :key="key" :value="key">{{ label }}</option>
-      </select>
-      <select v-model="filters.status" class="field-input" style="margin-bottom:0;width:120px;" @change="resetAndLoad">
-        <option value="">전체 상태</option>
-        <option v-for="(label, key) in STATUS_LABEL" :key="key" :value="key">{{ label }}</option>
-      </select>
-      <template v-if="canExport">
-        <button class="btn" style="margin-left:auto;" :disabled="!selected.length" @click="pendingBulkAction = 'confirm'">확인</button>
-        <button class="btn" :disabled="!selected.length" @click="pendingBulkAction = 'resolve'">조치</button>
-        <button class="btn" :disabled="!selected.length" @click="pendingExport = 'selected'">선택 출력</button>
-        <button class="btn" @click="pendingExport = 'all'">전체출력</button>
-      </template>
-    </div>
+    <BaseCard>
+      <!-- 검색 조건 -->
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
+        <input v-model="keyword" placeholder="현장/분전반/유형 검색" class="field-input" style="margin-bottom:0;width:180px;" @keyup.enter="search" />
+        <button class="btn" @click="search">검색</button>
+        <input v-model="filters.from" type="date" class="field-input" style="margin-bottom:0;width:150px;" @change="resetAndLoad" />
+        <span style="color:var(--color-text-muted);">~</span>
+        <input v-model="filters.to" type="date" class="field-input" style="margin-bottom:0;width:150px;" @change="resetAndLoad" />
+        <select v-if="auth.role === 'SUPER_ADMIN'" v-model="filters.siteId" class="field-input" style="margin-bottom:0;width:140px;" @change="resetAndLoad">
+          <option value="">전체 현장</option>
+          <option v-for="s in sites" :key="s.siteId" :value="s.siteId">{{ s.name }}</option>
+        </select>
+        <select v-model="filters.type" class="field-input" style="margin-bottom:0;width:140px;" @change="resetAndLoad">
+          <option value="">전체 유형</option>
+          <option v-for="(label, key) in TYPE_LABEL" :key="key" :value="key">{{ label }}</option>
+        </select>
+        <select v-model="filters.status" class="field-input" style="margin-bottom:0;width:120px;" @change="resetAndLoad">
+          <option value="">전체 상태</option>
+          <option v-for="(label, key) in STATUS_LABEL" :key="key" :value="key">{{ label }}</option>
+        </select>
+        <template v-if="canExport">
+          <button class="btn" style="margin-left:auto;" :disabled="!selected.length" @click="pendingBulkAction = 'confirm'">확인</button>
+          <button class="btn" :disabled="!selected.length" @click="pendingBulkAction = 'resolve'">조치</button>
+          <button class="btn" :disabled="!selected.length" @click="pendingExport = 'selected'">선택 출력</button>
+          <button class="btn" @click="pendingExport = 'all'">전체출력</button>
+        </template>
+      </div>
 
-    <p v-if="loading" style="color:var(--color-text-muted);"><span class="spinner"></span>불러오는 중...</p>
-    <table v-else style="width:100%;border-collapse:collapse;">
-      <thead>
-        <tr style="text-align:left;border-bottom:1px solid var(--color-border);">
-          <th v-if="canExport" style="padding:8px;"><input type="checkbox" v-model="allSelected" /></th>
-          <th style="padding:8px;">발생일시</th>
-          <th style="padding:8px;">현장</th>
-          <th style="padding:8px;">분전반</th>
-          <th style="padding:8px;">회로</th>
-          <th style="padding:8px;">유형</th>
-          <th style="padding:8px;">상태</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="a in filteredAlerts" :key="a.alertId" style="border-bottom:1px solid var(--color-border);cursor:pointer;">
-          <td v-if="canExport" style="padding:8px;" @click.stop>
-            <input type="checkbox" v-model="selected" :value="a.alertId" />
-          </td>
-          <td style="padding:8px;" @click="openDetail(a)">{{ formatDateTime(a.triggeredAt) }}</td>
-          <td style="padding:8px;" @click="openDetail(a)">{{ siteNameFor(a.panelName) }}</td>
-          <td style="padding:8px;" @click="openDetail(a)">{{ a.panelName }}</td>
-          <td style="padding:8px;" @click="openDetail(a)">{{ a.circuitNo != null ? `채널 ${a.circuitNo}` : '-' }}</td>
-          <td style="padding:8px;" @click="openDetail(a)">{{ TYPE_LABEL[a.type] ?? a.type }}</td>
-          <td style="padding:8px;" @click="openDetail(a)">
-            <span class="badge" :style="{ background: STATUS_COLOR[a.status] }">
-              {{ STATUS_LABEL[a.status] ?? a.status }}
-            </span>
-          </td>
-        </tr>
-        <tr v-if="!filteredAlerts.length">
-          <td :colspan="canExport ? 7 : 6" style="padding:16px;text-align:center;color:var(--color-text-muted);">알림 이력이 없습니다.</td>
-        </tr>
-      </tbody>
-    </table>
-    <BasePagination
-      :current-page="page"
-      :total-pages="totalPages"
-      :total-items="totalElements"
-      @change="goToPage"
-    />
+      <!-- 경보 목록 -->
+      <p v-if="loading" style="color:var(--color-text-muted);"><span class="spinner"></span>불러오는 중...</p>
+      <table v-else style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="text-align:left;border-bottom:1px solid var(--color-border);">
+            <th v-if="canExport" style="padding:8px;"><input type="checkbox" v-model="allSelected" /></th>
+            <th style="padding:8px;">발생일시</th>
+            <th style="padding:8px;">현장</th>
+            <th style="padding:8px;">분전반</th>
+            <th style="padding:8px;">회로</th>
+            <th style="padding:8px;">유형</th>
+            <th style="padding:8px;">상태</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="a in filteredAlerts" :key="a.alertId" style="border-bottom:1px solid var(--color-border);cursor:pointer;">
+            <td v-if="canExport" style="padding:8px;" @click.stop>
+              <input type="checkbox" v-model="selected" :value="a.alertId" />
+            </td>
+            <td style="padding:8px;" @click="openDetail(a)">{{ formatDateTime(a.triggeredAt) }}</td>
+            <td style="padding:8px;" @click="openDetail(a)">{{ siteNameFor(a.panelName) }}</td>
+            <td style="padding:8px;" @click="openDetail(a)">{{ a.panelName }}</td>
+            <td style="padding:8px;" @click="openDetail(a)">{{ a.circuitNo != null ? `채널 ${a.circuitNo}` : '-' }}</td>
+            <td style="padding:8px;" @click="openDetail(a)">
+              <StatusBadge :variant="TYPE_BADGE_VARIANT[a.type] ?? 'neutral'">
+                {{ TYPE_LABEL[a.type] ?? a.type }}
+              </StatusBadge>
+            </td>
+            <td style="padding:8px;" @click="openDetail(a)">
+              <StatusBadge :status="a.status">
+                {{ STATUS_LABEL[a.status] ?? a.status }}
+              </StatusBadge>
+            </td>
+          </tr>
+          <tr v-if="!filteredAlerts.length">
+            <td :colspan="canExport ? 7 : 6" style="padding:16px;text-align:center;color:var(--color-text-muted);">알림 이력이 없습니다.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- 페이지 이동 -->
+      <BasePagination
+        :current-page="page"
+        :total-pages="totalPages"
+        :total-items="totalElements"
+        @change="goToPage"
+      />
+    </BaseCard>
 
     <!-- 분전반 상세확인 팝업 -->
     <BaseModal
@@ -456,8 +482,18 @@ onMounted(async () => {
         <div class="modal-body">
           <p>현장: {{ siteNameFor(detail?.panelName) }}</p>
           <p>회로: {{ detail?.circuitNo != null ? `채널 ${detail.circuitNo}` : '-' }}</p>
-          <p>유형: {{ TYPE_LABEL[detail?.type] ?? detail?.type }}</p>
-          <p>상태: {{ STATUS_LABEL[detail?.status] ?? detail?.status }}</p>
+          <p>
+            유형:
+            <StatusBadge :variant="TYPE_BADGE_VARIANT[detail?.type] ?? 'neutral'">
+              {{ TYPE_LABEL[detail?.type] ?? detail?.type }}
+            </StatusBadge>
+          </p>
+          <p>
+            상태:
+            <StatusBadge :status="detail?.status">
+              {{ STATUS_LABEL[detail?.status] ?? detail?.status }}
+            </StatusBadge>
+          </p>
           <p>발생일시: {{ formatDateTime(detail?.triggeredAt) }}</p>
 
           <template v-if="resolveNoteMode">
@@ -493,3 +529,9 @@ onMounted(async () => {
       @confirm="runBulkAction" @cancel="pendingBulkAction=null" />
   </div>
 </template>
+
+<style scoped>
+.alert-history-page {
+  min-height: 100%;
+}
+</style>
