@@ -3,6 +3,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
 import ActionResultModal from '../components/ActionResultModal.vue'
+import BaseCard from '../components/common/BaseCard.vue'
+import PageHeader from '../components/common/PageHeader.vue'
 import { useAuthStore } from '../stores/auth'
 import { useUiAlertStore } from '../stores/uiAlert'
 import { USER_ROLE_LABELS } from '@/constants/domainLabels'
@@ -79,9 +81,10 @@ function goAccountList() {
 </script>
 
 <template>
-  <div>
-    <h2 style="margin-top:0;">계정 추가</h2>
-    <div class="card" style="max-width:420px;padding:24px;">
+  <div class="account-add-page">
+    <PageHeader title="계정 추가" />
+
+    <BaseCard class="account-form-card">
       <div v-if="errorMsg" class="banner banner-danger">{{ errorMsg }}</div>
 
       <label class="field-label">이름</label>
@@ -118,7 +121,8 @@ function goAccountList() {
         <button class="btn btn-primary" style="min-width:120px;" @click="submit">등록</button>
         <button class="btn" style="min-width:120px;" @click="cancel">취소</button>
       </div>
-    </div>
+    </BaseCard>
+
     <ActionResultModal
       :visible="!!createResult"
       title="계정 등록 완료"
@@ -129,3 +133,13 @@ function goAccountList() {
     />
   </div>
 </template>
+
+<style scoped>
+.account-add-page {
+  min-height: 100%;
+}
+
+.account-form-card {
+  max-width: 420px;
+}
+</style>

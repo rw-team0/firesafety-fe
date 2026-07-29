@@ -3,6 +3,8 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
 import ActionResultModal from '../components/ActionResultModal.vue'
+import BaseCard from '../components/common/BaseCard.vue'
+import PageHeader from '../components/common/PageHeader.vue'
 import { useAuthStore } from '../stores/auth'
 import { USER_ROLE_LABELS } from '@/constants/domainLabels'
 
@@ -73,9 +75,10 @@ function goAccountList() {
 </script>
 
 <template>
-  <div v-if="!loading">
-    <h2 style="margin-top:0;">계정 수정</h2>
-    <div class="card" style="max-width:420px;padding:24px;">
+  <div v-if="!loading" class="account-edit-page">
+    <PageHeader title="계정 수정" />
+
+    <BaseCard class="account-form-card">
       <div v-if="forbidden" class="banner banner-danger">403 — 이 계정은 {{ USER_ROLE_LABELS.SUPER_ADMIN }}만 수정할 수 있습니다.</div>
       <div v-if="errorMsg" class="banner banner-danger">{{ errorMsg }}</div>
       <fieldset :disabled="forbidden" style="border:none;padding:0;margin:0;">
@@ -105,7 +108,8 @@ function goAccountList() {
           <button class="btn" @click="cancel">취소</button>
         </div>
       </fieldset>
-    </div>
+    </BaseCard>
+
     <ActionResultModal
       :visible="!!updateResult"
       title="계정 수정 완료"
@@ -116,3 +120,13 @@ function goAccountList() {
     />
   </div>
 </template>
+
+<style scoped>
+.account-edit-page {
+  min-height: 100%;
+}
+
+.account-form-card {
+  max-width: 420px;
+}
+</style>
