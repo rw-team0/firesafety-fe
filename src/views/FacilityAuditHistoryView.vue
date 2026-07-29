@@ -2,6 +2,9 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import httpRequester from '../utils/httpRequester'
 import BasePagination from '../components/common/BasePagination.vue'
+import BaseCard from '../components/common/BaseCard.vue'
+import PageHeader from '../components/common/PageHeader.vue'
+import StatusBadge from '../components/common/StatusBadge.vue'
 import { useUiAlertStore } from '../stores/uiAlert'
 import { formatDateTime, isoDate } from '@/utils/formatters'
 
@@ -38,7 +41,7 @@ const PAGE_SIZE = 13
 
 const TARGET_TYPE_LABEL = { SITE: '현장', PANEL: '분전반', CIRCUIT: '회로' }
 const ACTION_LABEL = { CREATE: '추가', UPDATE: '수정', DELETE: '삭제' }
-const ACTION_COLOR = { CREATE: 'var(--color-success)', UPDATE: 'var(--color-warning)', DELETE: 'var(--color-danger)' }
+const ACTION_BADGE_VARIANT = { CREATE: 'success', UPDATE: 'warning', DELETE: 'danger' }
 
 // beforeData/afterData가 실제로는 엔티티 전체(id/status/isOnline/생성·수정·삭제시각 등 내부 필드 포함)를
 // 통째로 JSON 직렬화해서 내려온다고 확인됨(2026-07-24) — 그대로 나열하면 알아보기 힘들어서
@@ -165,72 +168,218 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div>
-    <div style="display:flex;align-items:center;gap:10px;">
-      <h2 style="margin:0;">설비 관리 이력</h2>
-      <router-link class="btn" style="margin-left:auto;" to="/settings/facilities">설비관리로</router-link>
-    </div>
+  <div class="facility-audit-page">
+    <PageHeader title="설비 관리 이력">
+      <template #actions>
+        <router-link class="btn" to="/settings/facilities">설비관리로</router-link>
+      </template>
+    </PageHeader>
 
-    <div style="display:flex;gap:8px;margin:16px 0;align-items:center;flex-wrap:wrap;">
-      <input v-model="keyword" placeholder="이름/관리계정명 검색" class="field-input" style="margin-bottom:0;width:200px;" @keyup.enter="search" />
-      <button class="btn" @click="search">검색</button>
-      <!-- <select v-model="period" class="field-input" style="margin-bottom:0;width:130px;" @change="applyPeriod">
-        <option value="">전체 기간</option>
-        <option value="today">오늘</option>
-        <option value="7d">최근 7일</option>
-        <option value="30d">최근 30일</option>
-      </select> -->
-      <input v-model="from" type="date" class="field-input" style="margin-bottom:0;width:150px;" />
-      <span style="color:var(--color-text-muted);">~</span>
-      <input v-model="to" type="date" class="field-input" style="margin-bottom:0;width:150px;" />
-      <button class="btn" style="margin-left:auto;" @click="exportExcel">전체 출력</button>
-      <button class="btn" :disabled="!selected.length" @click="exportExcel">선택 출력</button>
-    </div>
+    <BaseCard>
+      <template #header>
+        <!-- 검색 조건 -->
+        <div class="facility-audit-filter">
+          <input
+            v-model="keyword"
+            placeholder="이름/관리계정명 검색"
+            class="field-input facility-audit-filter__keyword"
+            @keyup.enter="search"
+          />
+          <button class="btn" @click="search">검색</button>
+          <!-- <select v-model="period" class="field-input" style="margin-bottom:0;width:130px;" @change="applyPeriod">
+            <option value="">전체 기간</option>
+            <option value="today">오늘</option>
+            <option value="7d">최근 7일</option>
+            <option value="30d">최근 30일</option>
+          </select> -->
+          <input v-model="from" type="date" class="field-input facility-audit-filter__date" />
+          <span class="facility-audit-filter__dash">~</span>
+          <input v-model="to" type="date" class="field-input facility-audit-filter__date" />
+          <button class="btn facility-audit-filter__all" @click="exportExcel">전체 출력</button>
+          <button class="btn" :disabled="!selected.length" @click="exportExcel">선택 출력</button>
+        </div>
+      </template>
 
-    <p v-if="loading" style="color:var(--color-text-muted);"><span class="spinner"></span>불러오는 중...</p>
-    <table v-else style="width:100%;border-collapse:collapse;table-layout:fixed;">
-      <colgroup>
-        <col style="width:36px;">
-        <col style="width:22%;">
-        <col style="width:9%;">
-        <col style="width:12%;">
-        <col style="width:9%;">
-        <col>
-        <col style="width:150px;">
-      </colgroup>
-      <thead>
-        <tr style="text-align:left;border-bottom:1px solid var(--color-border);">
-          <th style="padding:8px;"><input type="checkbox" :checked="allSelected" @change="toggleSelectAll" /></th>
-          <th style="padding:8px;">이름</th>
-          <th style="padding:8px;">설비 종류</th>
-          <th style="padding:8px;">관리한 계정명</th>
-          <th style="padding:8px;">관리사항</th>
-          <th style="padding:8px;">내용</th>
-          <th style="padding:8px;">관리 시점</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="log in pagedLogs" :key="log.auditId" style="border-bottom:1px solid var(--color-border);">
-          <td style="padding:8px;"><input type="checkbox" v-model="selected" :value="log.auditId" /></td>
-          <td style="padding:8px;overflow-wrap:break-word;">{{ targetName(log) }}</td>
-          <td style="padding:8px;">{{ TARGET_TYPE_LABEL[log.targetType] ?? log.targetType }}</td>
-          <td style="padding:8px;overflow-wrap:break-word;">{{ actorName(log.actorUserId) }}</td>
-          <td style="padding:8px;">
-            <span class="badge" :style="{ background: ACTION_COLOR[log.action] }">{{ ACTION_LABEL[log.action] ?? log.action }}</span>
-          </td>
-          <td style="padding:8px;font-size:12px;color:var(--color-text-muted);overflow-wrap:break-word;">{{ summarize(log) }}</td>
-          <td style="padding:8px;">{{ formatDateTime(log.createdAt) }}</td>
-        </tr>
-        <tr v-if="!filteredLogs.length">
-          <td colspan="7" style="padding:16px;text-align:center;color:var(--color-text-muted);">이력이 없습니다.</td>
-        </tr>
-      </tbody>
-    </table>
-    <BasePagination
-      :current-page="page"
-      :total-pages="totalPages"
-      :total-items="filteredLogs.length"
-      @change="goToPage"
-    />
+      <p v-if="loading" class="facility-audit-loading"><span class="spinner"></span>불러오는 중...</p>
+      <template v-else>
+        <!-- 이력 목록 -->
+        <div class="facility-audit-table-wrap">
+          <table class="facility-audit-table">
+            <colgroup>
+              <col class="facility-audit-table__check">
+              <col class="facility-audit-table__name">
+              <col class="facility-audit-table__type">
+              <col class="facility-audit-table__actor">
+              <col class="facility-audit-table__action">
+              <col>
+              <col class="facility-audit-table__time">
+            </colgroup>
+            <thead>
+              <tr>
+                <th><input type="checkbox" :checked="allSelected" @change="toggleSelectAll" /></th>
+                <th>이름</th>
+                <th>설비 종류</th>
+                <th>관리한 계정명</th>
+                <th>관리사항</th>
+                <th>내용</th>
+                <th>관리 시점</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="log in pagedLogs" :key="log.auditId">
+                <td><input type="checkbox" v-model="selected" :value="log.auditId" /></td>
+                <td class="facility-audit-table__wrap">{{ targetName(log) }}</td>
+                <td>{{ TARGET_TYPE_LABEL[log.targetType] ?? log.targetType }}</td>
+                <td class="facility-audit-table__wrap">{{ actorName(log.actorUserId) }}</td>
+                <td>
+                  <StatusBadge :variant="ACTION_BADGE_VARIANT[log.action] || 'neutral'">
+                    {{ ACTION_LABEL[log.action] ?? log.action }}
+                  </StatusBadge>
+                </td>
+                <td class="facility-audit-table__summary">{{ summarize(log) }}</td>
+                <td>{{ formatDateTime(log.createdAt) }}</td>
+              </tr>
+              <tr v-if="!filteredLogs.length">
+                <td colspan="7" class="facility-audit-table__empty">이력이 없습니다.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </template>
+
+      <template #footer>
+        <!-- 페이지네이션 -->
+        <div v-if="!loading" class="facility-audit-pagination">
+          <BasePagination
+            :current-page="page"
+            :total-pages="totalPages"
+            :total-items="filteredLogs.length"
+            @change="goToPage"
+          />
+        </div>
+      </template>
+    </BaseCard>
   </div>
 </template>
+
+<style scoped>
+.facility-audit-page {
+  min-height: 100%;
+}
+
+.facility-audit-filter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  flex-wrap: wrap;
+}
+
+.facility-audit-filter__keyword,
+.facility-audit-filter__date {
+  margin-bottom: 0;
+}
+
+.facility-audit-filter__keyword {
+  width: 200px;
+}
+
+.facility-audit-filter__date {
+  width: 150px;
+}
+
+.facility-audit-filter__dash {
+  color: var(--color-text-secondary);
+}
+
+.facility-audit-filter__all {
+  margin-left: auto;
+}
+
+.facility-audit-loading {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-body);
+}
+
+.facility-audit-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.facility-audit-table {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.facility-audit-table__check {
+  width: 36px;
+}
+
+.facility-audit-table__name {
+  width: 22%;
+}
+
+.facility-audit-table__type {
+  width: 9%;
+}
+
+.facility-audit-table__actor {
+  width: 12%;
+}
+
+.facility-audit-table__action {
+  width: 9%;
+}
+
+.facility-audit-table__time {
+  width: 150px;
+}
+
+.facility-audit-table th {
+  padding: var(--space-12) var(--space-8);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  text-align: left;
+  font-size: var(--font-size-caption);
+  font-weight: 700;
+}
+
+.facility-audit-table td {
+  padding: var(--space-12) var(--space-8);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-body);
+}
+
+.facility-audit-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.facility-audit-table__wrap,
+.facility-audit-table__summary {
+  overflow-wrap: break-word;
+}
+
+.facility-audit-table__summary {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-caption);
+}
+
+.facility-audit-table__empty {
+  padding: var(--space-24);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.facility-audit-pagination :deep(.base-pagination) {
+  margin-top: 0;
+}
+
+@media (max-width: 720px) {
+  .facility-audit-filter__all {
+    margin-left: 0;
+  }
+}
+</style>
