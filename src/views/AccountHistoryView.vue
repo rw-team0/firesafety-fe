@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import httpRequester from '../utils/httpRequester'
 import { ROLE_LABEL } from '../constants/roles'
+import ActionResultModal from '../components/ActionResultModal.vue'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import { useUiAlertStore } from '../stores/uiAlert'
 
@@ -15,6 +16,7 @@ const logs = ref([])
 const usersById = ref({})
 const loading = ref(false)
 const restoringId = ref(null)
+const restoreResult = ref(null)
 const page = ref(0)
 const PAGE_SIZE = 13
 const PAGE_WINDOW = 10
@@ -42,9 +44,24 @@ function formatDateTime(v) {
   return v ? v.replace('T', ' ') : '-'
 }
 
+function formatResultDateTime(date = new Date()) {
+  const pad = (v) => String(v).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+}
+
 function targetLabel(userId) {
   const u = usersById.value[userId]
   return u ? `${u.name} (${ROLE_LABEL[u.role] ?? u.role})` : `#${userId}`
+}
+function userResultLabel(data) {
+  if (!data) return ''
+  return data.name && data.email ? `${data.name} (${data.email})` : data.name || data.email || ''
+}
+function restoreTargetLabel(userId) {
+  const user = usersById.value[userId]
+  if (user) return userResultLabel(user)
+  const log = logs.value.find((item) => item.action === 'DELETE' && item.targetUserId === userId)
+  return userResultLabel(log?.beforeData) || userResultLabel(log?.afterData) || `#${userId}`
 }
 function actorLabel(userId) {
   if (userId == null) return '시스템'
@@ -146,9 +163,13 @@ async function load() {
 onMounted(load)
 
 async function restore(userId) {
+  const restoredAccountName = restoreTargetLabel(userId)
   restoringId.value = null
   await httpRequester.patch(`/users/${userId}/restore`) // Swagger 확인: PATCH /api/users/{userId}/restore
-  uiAlert.show('계정이 복구되었습니다.')
+  restoreResult.value = {
+    itemName: restoredAccountName,
+    time: formatResultDateTime(),
+  }
   load()
 }
 </script>
@@ -232,5 +253,14 @@ async function restore(userId) {
     <ConfirmModal v-if="restoringId" title="계정 복구 확인"
       message="이 계정을 복구하시겠습니까?"
       @confirm="restore(restoringId)" @cancel="restoringId = null" />
+    <ActionResultModal
+      :visible="!!restoreResult"
+      title="계정 복구 완료"
+      desc="계정 정보가 복구되었습니다."
+      :item-name="restoreResult?.itemName"
+      :time="restoreResult?.time"
+      action-label="복구 완료"
+      @close="restoreResult = null"
+    />
   </div>
 </template>

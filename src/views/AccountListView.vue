@@ -1,15 +1,15 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import httpRequester from '../utils/httpRequester'
+import ActionResultModal from '../components/ActionResultModal.vue'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import { ROLE_LABEL } from '../constants/roles'
-import { useUiAlertStore } from '../stores/uiAlert'
 
-const uiAlert = useUiAlertStore()
 const users = ref([])
 const selected = ref([])
 const loading = ref(false)
 const showDeleteConfirm = ref(false)
+const deleteResult = ref(null)
 
 const allSelected = computed(() => users.value.length > 0 && selected.value.length === users.value.length)
 
@@ -27,12 +27,30 @@ async function loadUsers() {
 }
 onMounted(loadUsers)
 
+function formatResultDateTime(date = new Date()) {
+  const pad = (v) => String(v).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+}
+
+function userLabel(user) {
+  if (!user) return ''
+  return user.name && user.email ? `${user.name} (${user.email})` : user.name || user.email || ''
+}
+
 async function confirmBulkDelete() {
   const count = selected.value.length
+  const deletedAccountName = users.value
+    .filter((user) => selected.value.includes(user.userId))
+    .map(userLabel)
+    .filter(Boolean)
+    .join(', ')
   // Swagger 확인: PATCH /api/users/bulk-delete, body {userIds}. ACC-006(확인 팝업 1회로 전체 삭제) 충족.
   await httpRequester.patch('/users/bulk-delete', { userIds: selected.value })
   showDeleteConfirm.value = false
-  uiAlert.show(`계정 ${count}건이 삭제되었습니다.`)
+  deleteResult.value = {
+    itemName: deletedAccountName || `계정 ${count}건`,
+    time: formatResultDateTime(),
+  }
   loadUsers()
 }
 </script>
@@ -83,5 +101,15 @@ async function confirmBulkDelete() {
     <ConfirmModal v-if="showDeleteConfirm" title="계정 삭제 확인"
       message="정말로 선택된 계정들을 삭제하시겠습니까?" danger
       @confirm="confirmBulkDelete" @cancel="showDeleteConfirm = false" />
+    <ActionResultModal
+      :visible="!!deleteResult"
+      type="danger"
+      title="계정 삭제 완료"
+      desc="계정 정보가 삭제되었습니다."
+      :item-name="deleteResult?.itemName"
+      :time="deleteResult?.time"
+      action-label="삭제 완료"
+      @close="deleteResult = null"
+    />
   </div>
 </template>
