@@ -4,7 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useMonitoringStore } from '../stores/monitoring'
 import { ROLE_LABEL } from '../constants/roles'
-import ConfirmModal from '../components/ConfirmModal.vue'
+import MobileModal from '../components/MobileModal.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -49,12 +49,18 @@ function goToPanel() {
         :style="{flex:1,textAlign:'center',padding:'14px 4px',fontSize:'11.5px',color:'var(--color-text)',textDecoration:'none',
           borderTop: route.name===t.name ? '2px solid var(--color-accent)' : '2px solid transparent'}"
       >{{ t.label }}</router-link>
-      <div @click="showLogoutConfirm = true" style="flex:1;text-align:center;padding:14px 4px;font-size:11.5px;color:var(--color-text);cursor:pointer;">로그아웃</div>
+      <button type="button" class="mobile-nav-logout" @click="showLogoutConfirm = true">로그아웃</button>
     </nav>
 
-    <ConfirmModal v-if="showLogoutConfirm" title="로그아웃"
+    <MobileModal
+      :visible="showLogoutConfirm"
+      title="로그아웃"
       message="로그아웃 하시겠습니까?"
-      @confirm="doLogout" @cancel="showLogoutConfirm = false" />
+      confirm-text="확인"
+      cancel-text="취소"
+      @confirm="doLogout"
+      @cancel="showLogoutConfirm = false"
+    />
 
     <!-- 위험 등급 전환 팝업. 레이아웃에 있어서 대시보드/알림이력 어느 화면이든 뜬다 -->
     <div v-if="monitoring.riskPopup" class="modal-overlay" @click.self="monitoring.clearRiskPopup()">
@@ -74,3 +80,18 @@ function goToPanel() {
     </div>
   </div>
 </template>
+
+<style scoped>
+.mobile-nav-logout {
+  flex: 1;
+  padding: 14px 4px;
+  border: none;
+  border-top: 2px solid transparent;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 11.5px;
+  text-align: center;
+  cursor: pointer;
+}
+</style>
