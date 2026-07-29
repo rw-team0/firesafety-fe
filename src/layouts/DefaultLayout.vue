@@ -6,6 +6,7 @@ import { useMonitoringStore } from '../stores/monitoring'
 import { useRouter } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
 import ConfirmModal from '../components/ConfirmModal.vue'
+import BaseModal from '../components/common/BaseModal.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -112,14 +113,13 @@ function formatDateTime(v) {
       @confirm="doLogout" @cancel="showLogoutConfirm = false" />
 
     <!-- 미확인 알림 클릭 시 최근 알림 이력 보여주고 해당 알림으로 이동하는 모달 -->
-    <div v-if="showAlertsModal" class="modal-overlay" @click.self="showAlertsModal=false">
-      <div class="modal-panel" style="width:420px;">
-        <div class="modal-header">
-          최근 미확인 알림(최대 5개)
-          <button class="modal-close" aria-label="닫기" @click="showAlertsModal=false">×</button>
-        </div>
-        <div class="modal-body">
-          <div style="margin-bottom:28px;">
+    <BaseModal
+      :visible="showAlertsModal"
+      title="최근 미확인 알림(최대 5개)"
+      max-width="420px"
+      @close="showAlertsModal=false"
+    >
+      <div style="margin-bottom:28px;">
         <div
           v-for="a in recentAlerts"
           :key="a.alertId"
@@ -137,12 +137,12 @@ function formatDateTime(v) {
         <p v-if="!recentAlerts.length" style="color:var(--color-text-muted);">최근 알림이 없습니다.</p>
       </div>
 
-          <div class="modal-actions">
-            <button class="btn" style="min-width:120px;" @click="showAlertsModal=false">닫기</button>
-          </div>
+      <template #footer>
+        <div class="modal-actions" style="padding:0 18px 18px;">
+          <button class="btn" style="min-width:120px;" @click="showAlertsModal=false">닫기</button>
         </div>
-      </div>
-    </div>
+      </template>
+    </BaseModal>
 
     <!-- 위험 등급 전환 팝업(프론트가이드 7.5절). 레이아웃에 있어서 어느 화면에 있든 뜬다 -->
     <div v-if="monitoring.riskPopup" class="modal-overlay" @click.self="monitoring.clearRiskPopup()">
