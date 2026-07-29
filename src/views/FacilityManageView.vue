@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import ActionResultModal from '../components/ActionResultModal.vue'
+import BaseModal from '../components/common/BaseModal.vue'
 import { useAuthStore } from '../stores/auth'
 import { useUiAlertStore } from '../stores/uiAlert'
 
@@ -436,42 +437,40 @@ onMounted(async () => {
     </div>
 
     <!-- 현장 수정 팝업 -->
-    <div v-if="showEditSiteModal" class="modal-overlay" @click.self="showEditSiteModal=false">
-      <div class="modal-panel" style="width:380px;">
-        <div class="modal-header">
-          현장 수정
-          <button class="modal-close" aria-label="닫기" @click="showEditSiteModal=false">×</button>
-        </div>
-        <div class="modal-body">
-          <div v-if="editSiteErrorMsg" class="banner banner-danger">{{ editSiteErrorMsg }}</div>
+    <BaseModal
+      :visible="showEditSiteModal"
+      title="현장 정보 수정"
+      @close="showEditSiteModal=false"
+    >
+      <div v-if="editSiteErrorMsg" class="banner banner-danger">{{ editSiteErrorMsg }}</div>
 
-          <label class="field-label">현장명</label>
-          <input v-model="editSiteForm.name" placeholder="현장명" class="field-input" />
+      <label class="field-label">현장명</label>
+      <input v-model="editSiteForm.name" placeholder="현장명" class="field-input" />
 
-          <label class="field-label">주소 검색</label>
-          <div style="display:flex;gap:6px;">
-            <input v-model="editAddressQuery" placeholder="예: 테헤란로 123" class="field-input" @keyup.enter="searchEditSiteAddress" />
-            <button type="button" class="btn" :disabled="editAddressSearching" @click="searchEditSiteAddress">{{ editAddressSearching ? '검색 중...' : '검색' }}</button>
-          </div>
-          <ul v-if="editAddressResults.length" style="list-style:none;margin:4px 0 0;padding:0;border:1px solid var(--color-border);border-radius:6px;max-height:160px;overflow-y:auto;">
-            <li v-for="(r, idx) in editAddressResults" :key="idx" style="padding:6px 8px;cursor:pointer;border-bottom:1px solid var(--color-border);" @click="pickEditSiteAddress(r)">
-              {{ r.address }}<span v-if="r.zipCode" style="color:var(--color-text-muted);font-size:12px;"> ({{ r.zipCode }})</span>
-            </li>
-          </ul>
-
-          <label class="field-label">주소 *</label>
-          <input v-model="editSiteForm.address" placeholder="검색 결과를 선택하거나 직접 입력" class="field-input" />
-
-          <label class="field-label">우편번호</label>
-          <input v-model="editSiteForm.zipCode" placeholder="주소 검색 시 자동 입력" class="field-input" />
-
-          <div class="modal-actions">
-            <button class="btn btn-primary" style="min-width:120px;" :disabled="editSiteSubmitting" @click="saveEditSite">{{ editSiteSubmitting ? '저장 중...' : '저장' }}</button>
-            <button class="btn" style="min-width:120px;" @click="showEditSiteModal=false">취소</button>
-          </div>
-        </div>
+      <label class="field-label">주소 검색</label>
+      <div style="display:flex;gap:6px;">
+        <input v-model="editAddressQuery" placeholder="예: 테헤란로 123" class="field-input" @keyup.enter="searchEditSiteAddress" />
+        <button type="button" class="btn" :disabled="editAddressSearching" @click="searchEditSiteAddress">{{ editAddressSearching ? '검색 중...' : '검색' }}</button>
       </div>
-    </div>
+      <ul v-if="editAddressResults.length" style="list-style:none;margin:4px 0 0;padding:0;border:1px solid var(--color-border);border-radius:6px;max-height:160px;overflow-y:auto;">
+        <li v-for="(r, idx) in editAddressResults" :key="idx" style="padding:6px 8px;cursor:pointer;border-bottom:1px solid var(--color-border);" @click="pickEditSiteAddress(r)">
+          {{ r.address }}<span v-if="r.zipCode" style="color:var(--color-text-muted);font-size:12px;"> ({{ r.zipCode }})</span>
+        </li>
+      </ul>
+
+      <label class="field-label">주소 *</label>
+      <input v-model="editSiteForm.address" placeholder="검색 결과를 선택하거나 직접 입력" class="field-input" />
+
+      <label class="field-label">우편번호</label>
+      <input v-model="editSiteForm.zipCode" placeholder="주소 검색 시 자동 입력" class="field-input" />
+
+      <template #footer>
+        <div class="modal-actions" style="padding:0 18px 18px;">
+          <button class="btn" style="min-width:120px;" @click="showEditSiteModal=false">취소</button>
+          <button class="btn btn-primary" style="min-width:120px;" :disabled="editSiteSubmitting" @click="saveEditSite">{{ editSiteSubmitting ? '저장 중...' : '저장' }}</button>
+        </div>
+      </template>
+    </BaseModal>
 
     <!-- 분전반관리: 좌 등록/수정폼 + 우 선택 현장의 분전반 목록(피그마 와이어프레임 기준) -->
     <div v-if="tab==='panels'" style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
