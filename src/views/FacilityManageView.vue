@@ -3,6 +3,7 @@ import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
 import ConfirmModal from '../components/ConfirmModal.vue'
+import ActionResultModal from '../components/ActionResultModal.vue'
 import { useAuthStore } from '../stores/auth'
 import { useUiAlertStore } from '../stores/uiAlert'
 
@@ -33,6 +34,7 @@ const siteSubmitting = ref(false)
 const siteErrorMsg = ref('')
 const selectedSiteIds = ref([])
 const showSiteBulkDeleteConfirm = ref(false)
+const siteDeleteResult = ref(null)
 function emptySiteForm() { return { name: '', address: '', zipCode: '' } }
 const siteForm = ref(emptySiteForm())
 
@@ -92,6 +94,7 @@ const editSiteId = ref(null)
 const editSiteForm = ref(emptySiteForm())
 const editSiteSubmitting = ref(false)
 const editSiteErrorMsg = ref('')
+const siteEditResult = ref(null)
 const editAddressQuery = ref('')
 const editAddressResults = ref([])
 const editAddressSearching = ref(false)
@@ -121,6 +124,10 @@ function openSiteDetail(s) {
   editAddressResults.value = []
   showEditSiteModal.value = true
 }
+function formatResultDateTime(date = new Date()) {
+  const pad = (v) => String(v).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+}
 async function saveEditSite() {
   editSiteErrorMsg.value = ''
   if (!editSiteForm.value.name) {
@@ -134,8 +141,15 @@ async function saveEditSite() {
   editSiteSubmitting.value = true
   try {
     await httpRequester.put(`/sites/${editSiteId.value}`, editSiteForm.value)
+    const editedSiteName = editSiteForm.value.name
     showEditSiteModal.value = false
-    uiAlert.show('현장 정보가 수정되었습니다.')
+    siteEditResult.value = {
+      title: '현장 정보 수정 완료',
+      subtitle: '현장 정보가 수정되었습니다.',
+      itemName: editedSiteName,
+      time: formatResultDateTime(),
+      actionLabel: '수정 완료',
+    }
     loadSites()
   } catch (e) {
     editSiteErrorMsg.value = e.response?.data?.resultMessage ?? '수정에 실패했습니다.'
@@ -151,13 +165,23 @@ function toggleSiteSelectAll() {
 async function confirmSiteBulkDelete() {
   showSiteBulkDeleteConfirm.value = false
   const count = selectedSiteIds.value.length
+  const deletedSiteName = sites.value
+    .filter((site) => selectedSiteIds.value.includes(site.siteId))
+    .map((site) => site.name)
+    .join(', ')
   // 현장 벌크삭제 전용 API는 없음(DELETE /sites/{id} 단건만 존재, Swagger 확인) — 선택 개수만큼 순차 삭제
   for (const siteId of selectedSiteIds.value) {
     await httpRequester.delete(`/sites/${siteId}`)
   }
   if (selectedSiteIds.value.includes(editSiteId.value)) showEditSiteModal.value = false
   selectedSiteIds.value = []
-  uiAlert.show(`현장 ${count}건이 삭제되었습니다.`)
+  siteDeleteResult.value = {
+    title: '현장 삭제 완료',
+    subtitle: '현장 정보가 삭제되었습니다.',
+    itemName: deletedSiteName || `현장 ${count}건`,
+    time: formatResultDateTime(),
+    actionLabel: '삭제 완료',
+  }
   loadSites()
   loadAllPanels()
 }
@@ -600,5 +624,24 @@ onMounted(async () => {
     <ConfirmModal v-if="showSiteBulkDeleteConfirm" title="현장 삭제 확인"
       message="선택한 현장을 삭제하시겠습니까? 하위 분전반도 함께 비활성화됩니다." danger
       @confirm="confirmSiteBulkDelete" @cancel="showSiteBulkDeleteConfirm=false" />
+    <ActionResultModal
+      :visible="!!siteEditResult"
+      :title="siteEditResult?.title"
+      :subtitle="siteEditResult?.subtitle"
+      :item-name="siteEditResult?.itemName"
+      :time="siteEditResult?.time"
+      :action-label="siteEditResult?.actionLabel"
+      @close="siteEditResult = null"
+    />
+    <ActionResultModal
+      :visible="!!siteDeleteResult"
+      type="danger"
+      :title="siteDeleteResult?.title"
+      :subtitle="siteDeleteResult?.subtitle"
+      :item-name="siteDeleteResult?.itemName"
+      :time="siteDeleteResult?.time"
+      :action-label="siteDeleteResult?.actionLabel"
+      @close="siteDeleteResult = null"
+    />
   </div>
 </template>
