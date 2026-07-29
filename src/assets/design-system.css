@@ -4,19 +4,45 @@
    여기 :root 변수를 바꾸면 그 변수를 쓰는 앱 전체 요소가 한 번에 바뀜(화면별 인라인 style이 대부분
    var(--color-xxx) 형태로 이 값들을 그대로 참조하고 있음) — 아래 각 변수 옆에 실제로 어디서 쓰이는지 적어둠 */
 :root {
+  /* ArcGuard 표면 */
+  --color-page-bg: #f5f6f7;
+  --color-card-bg: #ffffff;
+  --color-sidebar-bg: #303236;
+  --color-text-primary: #25272a;
+  --color-text-secondary: #6f747b;
+  --color-action-primary: #3f474f;
+
   --color-success: #14ae5c;   /* 분전반/회로 "정상" 상태색, 알림 "조치됨" 뱃지, 계정이력 CREATE/RESTORE 뱃지, 통계 도넛차트 */
-  --color-warning: #e8b931;   /* 분전반/회로 "주의" 상태색, 알림 "확인됨" 뱃지, 계정이력 UPDATE 뱃지, 통계 일자별 경보 막대그래프 */
+  --color-warning: #e89b31;   /* 분전반/회로 "주의" 상태색, 알림 "확인됨" 뱃지, 계정이력 UPDATE 뱃지, 통계 일자별 경보 막대그래프 */
   --color-danger: #ec221f;    /* 분전반/회로 "위험" 상태색, 알림 "미확인" 뱃지, 삭제 버튼(.btn-danger), 에러 배너, 위험발생/삭제확인 팝업 헤더, "지연" 뱃지 */
   --color-offline: #787878;   /* 분전반 "통신두절" 상태색, 계정이력 PASSWORD_RESET 뱃지 */
-  --color-bg: #f3f3f3;        /* 사이드바 배경, 각종 진행률바/트랙의 중립 배경, 임계값 카드 초기 배경 */
-  --color-surface: #ffffff;   /* 카드·버튼·입력창·모달 패널의 기본 배경(흰색) — 거의 모든 컴포넌트가 참조 */
+  --color-bg: var(--color-page-bg);        /* 사이드바 배경, 각종 진행률바/트랙의 중립 배경, 임계값 카드 초기 배경 */
+  --color-surface: var(--color-card-bg);   /* 카드·버튼·입력창·모달 패널의 기본 배경(흰색) — 거의 모든 컴포넌트가 참조 */
   --color-border: #e0e0e0;    /* 카드·버튼·입력창·표 셀 테두리 전반, 구분선 */
-  --color-text: #222222;      /* 기본 본문/제목 텍스트 색 */
-  --color-text-muted: #767676;/* 보조 설명 텍스트, 안내문구, placeholder류, "불러오는 중"/"데이터 없음" 문구 */
-  --color-accent: #4b4b4b;    /* 주 액션 버튼(.btn-primary) 배경, 입력창 포커스 테두리, 사이드바 현재메뉴 강조, 페이지네이션 현재 페이지, 체크박스 accent-color */
+  --color-text: var(--color-text-primary);      /* 기본 본문/제목 텍스트 색 */
+  --color-text-muted: var(--color-text-secondary);/* 보조 설명 텍스트, 안내문구, placeholder류, "불러오는 중"/"데이터 없음" 문구 */
+  --color-accent: var(--color-action-primary);    /* 주 액션 버튼(.btn-primary) 배경, 입력창 포커스 테두리, 사이드바 현재메뉴 강조, 페이지네이션 현재 페이지, 체크박스 accent-color */
+
+  /* 공통 간격 */
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --space-24: 24px;
+  --space-32: 32px;
+
   --radius-sm: 4px;   /* .badge(뱃지)의 둥글기 */
   --radius-md: 8px;   /* .card/.btn/.field-input/.modal-close 등 대부분 컴포넌트의 기본 둥글기 */
-  --radius-lg: 10px;  /* .modal-panel(팝업 박스)의 둥글기 — 다른 것보다 살짝 더 둥글게 */
+  --radius-lg: 12px;  /* .modal-panel(팝업 박스)의 둥글기 — 다른 것보다 살짝 더 둥글게 */
+  --radius-xl: 16px;
+  --shadow-sm: 0 2px 10px rgba(24, 27, 31, .06);
+
+  /* 글자 크기 */
+  --font-size-title: 24px;
+  --font-size-subtitle: 14px;
+  --font-size-body: 14px;
+  --font-size-caption: 12px;
 
   /* z-index 토큰. 이번 단계에서는 신규 BaseModal만 사용하고, 기존 인라인/전역 z-index 값은 그대로 둔다. */
   --z-dropdown: 50;

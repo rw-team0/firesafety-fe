@@ -125,15 +125,15 @@ function changePage(nextPage) {
 
 <style scoped>
 .base-pagination {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
   gap: 12px 16px;
   margin-top: 10px;
 }
 
 .base-pagination__summary {
+  grid-column: 1;
   margin: 0;
   color: var(--color-text-muted);
   font-size: 12px;
@@ -145,6 +145,7 @@ function changePage(nextPage) {
 }
 
 .base-pagination__nav {
+  grid-column: 2;
   display: inline-flex;
   min-width: 0;
   align-items: center;
@@ -203,6 +204,7 @@ function changePage(nextPage) {
 
 @media (max-width: 640px) {
   .base-pagination {
+    display: flex;
     flex-direction: column;
     align-items: stretch;
   }

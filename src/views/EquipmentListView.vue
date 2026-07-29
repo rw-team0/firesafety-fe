@@ -3,7 +3,10 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
 import ConfirmModal from '../components/ConfirmModal.vue'
+import BaseCard from '../components/common/BaseCard.vue'
 import BasePagination from '../components/common/BasePagination.vue'
+import PageHeader from '../components/common/PageHeader.vue'
+import StatusBadge from '../components/common/StatusBadge.vue'
 import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
@@ -23,8 +26,8 @@ const PAGE_SIZE = 13
 
 // PanelStatus enum(백엔드가이드 6절): NORMAL/CAUTION/RISK/OFFLINE 4단계
 const STATUS_LABEL = { NORMAL: '정상', CAUTION: '주의', RISK: '위험', OFFLINE: '오프라인' }
-const STATUS_COLOR = { NORMAL: 'var(--color-success)', CAUTION: 'var(--color-warning)', RISK: 'var(--color-danger)', OFFLINE: 'var(--color-offline)' }
 
+// 상대 시각
 function formatRelative(iso) {
   if (!iso) return '-'
   const sec = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
@@ -36,6 +39,7 @@ function formatRelative(iso) {
   return `${Math.floor(hour / 24)}일 전`
 }
 
+// 설비/현장 같이 조회
 async function load() {
   loading.value = true
   const params = {}
@@ -52,6 +56,7 @@ async function load() {
 }
 onMounted(load)
 
+// 목록 안에서 검색
 function search() {
   appliedKeyword.value = keyword.value.trim()
   page.value = 0
@@ -68,21 +73,26 @@ const filteredPanels = computed(() => {
 const totalPages = computed(() => Math.max(1, Math.ceil(filteredPanels.value.length / PAGE_SIZE)))
 const pagedPanels = computed(() => filteredPanels.value.slice(page.value * PAGE_SIZE, (page.value + 1) * PAGE_SIZE))
 
+// 페이지 이동
 function goToPage(p) {
   if (p < 0 || p >= totalPages.value) return
   page.value = p
 }
 
 const allSelected = computed(() => pagedPanels.value.length > 0 && pagedPanels.value.every((p) => selected.value.includes(p.panelId)))
+
+// 현재 페이지 선택
 function toggleSelectAll() {
   const pagedIds = pagedPanels.value.map((p) => p.panelId)
   selected.value = allSelected.value
     ? selected.value.filter((id) => !pagedIds.includes(id))
     : [...new Set([...selected.value, ...pagedIds])]
 }
+
+// 단건 삭제 반복
 async function confirmBulkDelete() {
   showBulkDeleteConfirm.value = false
-  // 분전반 벌크삭제 전용 API는 없음(DELETE /panels/{id} 단건만 존재, Swagger 확인) — 선택 개수만큼 순차 삭제
+  // 벌크삭제 API 없음
   for (const panelId of selected.value) {
     await httpRequester.delete(`/panels/${panelId}`)
   }
@@ -91,67 +101,190 @@ async function confirmBulkDelete() {
 </script>
 
 <template>
-  <div>
-    <h2 style="margin-top:0;">설비 목록</h2>
+  <div class="equipment-list-page">
+    <PageHeader
+      title="설비 목록"
+      subtitle="분전반 상태와 최근 통신 시간을 확인하고 관리합니다."
+    >
+      <template #actions>
+        <router-link class="btn btn-primary" :to="{ path: '/settings/facilities', query: { tab: 'panels' } }">
+          설비 추가
+        </router-link>
+      </template>
+    </PageHeader>
 
-    <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap;">
-      <input v-model="keyword" placeholder="장비번호/설비명 검색" class="field-input" style="margin-bottom:0;width:220px;" @keyup.enter="search" />
-      <button class="btn" @click="search">검색</button>
-      <select v-model="status" class="field-input" style="margin-bottom:0;width:140px;" @change="load">
-        <option value="">전체 상태</option>
-        <option value="NORMAL">정상</option>
-        <option value="CAUTION">주의</option>
-        <option value="RISK">위험</option>
-        <option value="OFFLINE">오프라인</option>
-      </select>
-      <router-link class="btn" :to="{ path: '/settings/facilities', query: { tab: 'panels' } }" style="margin-left:auto;">설비 추가</router-link>
-      <button class="btn btn-danger" :disabled="!selected.length" @click="showBulkDeleteConfirm = true">선택 삭제</button>
-    </div>
+    <BaseCard>
+      <template #header>
+        <div class="equipment-list-toolbar">
+          <input
+            v-model="keyword"
+            placeholder="장비번호/설비명 검색"
+            class="field-input equipment-list-toolbar__search"
+            @keyup.enter="search"
+          />
+          <button class="btn" @click="search">검색</button>
+          <select v-model="status" class="field-input equipment-list-toolbar__status" @change="load">
+            <option value="">전체 상태</option>
+            <option value="NORMAL">정상</option>
+            <option value="CAUTION">주의</option>
+            <option value="RISK">위험</option>
+            <option value="OFFLINE">오프라인</option>
+          </select>
+          <button class="btn btn-danger equipment-list-toolbar__delete" :disabled="!selected.length" @click="showBulkDeleteConfirm = true">
+            선택 삭제
+          </button>
+        </div>
+      </template>
 
-    <p v-if="loading" style="color:var(--color-text-muted);"><span class="spinner"></span>불러오는 중...</p>
-    <table v-else style="width:100%;border-collapse:collapse;">
-      <thead>
-        <tr style="text-align:left;border-bottom:1px solid var(--color-border);">
-          <th style="padding:8px;"><input type="checkbox" :checked="allSelected" @change="toggleSelectAll" /></th>
-          <th style="padding:8px;">장비번호</th>
-          <th v-if="auth.role === 'SUPER_ADMIN'" style="padding:8px;">현장</th>
-          <th style="padding:8px;">분전반명</th>
-          <th style="padding:8px;">상태</th>
-          <th style="padding:8px;">마지막 일시</th>
-          <th style="padding:8px;"></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="p in pagedPanels" :key="p.panelId" style="border-bottom:1px solid var(--color-border);cursor:pointer;" @click="router.push(`/equipment/${p.panelId}`)">
-          <td style="padding:8px;" @click.stop><input type="checkbox" v-model="selected" :value="p.panelId" /></td>
-          <td style="padding:8px;">{{ p.mNo || '-' }}</td>
-          <td v-if="auth.role === 'SUPER_ADMIN'" style="padding:8px;">{{ sitesById[p.siteId]?.name ?? '-' }}</td>
-          <td style="padding:8px;">{{ p.name }}</td>
-          <td style="padding:8px;">
-            <span class="badge" :style="{ background: STATUS_COLOR[p.status] }">
-              {{ STATUS_LABEL[p.status] ?? p.status }}
-            </span>
-          </td>
-          <td style="padding:8px;">{{ formatRelative(p.lastCommunicatedAt) }}</td>
-          <td style="padding:8px;text-align:right;" @click.stop>
-            <router-link :to="`/equipment/${p.panelId}`" class="btn">상세보기 &gt;</router-link>
-          </td>
-        </tr>
-        <tr v-if="!filteredPanels.length">
-          <td :colspan="auth.role === 'SUPER_ADMIN' ? 7 : 6" style="padding:16px;text-align:center;color:var(--color-text-muted);">설비가 없습니다.</td>
-        </tr>
-      </tbody>
-    </table>
+      <p v-if="loading" class="equipment-list-loading"><span class="spinner"></span>불러오는 중...</p>
+      <div v-else class="equipment-list-table-wrap">
+        <table class="equipment-list-table">
+          <thead>
+            <tr>
+              <th><input type="checkbox" :checked="allSelected" @change="toggleSelectAll" /></th>
+              <th>장비번호</th>
+              <th v-if="auth.role === 'SUPER_ADMIN'">현장</th>
+              <th>분전반명</th>
+              <th>상태</th>
+              <th>마지막 일시</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="p in pagedPanels" :key="p.panelId" class="equipment-list-table__row" @click="router.push(`/equipment/${p.panelId}`)">
+              <td @click.stop><input type="checkbox" v-model="selected" :value="p.panelId" /></td>
+              <td>{{ p.mNo || '-' }}</td>
+              <td v-if="auth.role === 'SUPER_ADMIN'">{{ sitesById[p.siteId]?.name ?? '-' }}</td>
+              <td>{{ p.name }}</td>
+              <td>
+                <StatusBadge :status="p.status">
+                  {{ STATUS_LABEL[p.status] ?? p.status }}
+                </StatusBadge>
+              </td>
+              <td>{{ formatRelative(p.lastCommunicatedAt) }}</td>
+              <td class="equipment-list-table__actions" @click.stop>
+                <router-link :to="`/equipment/${p.panelId}`" class="btn">상세보기 &gt;</router-link>
+              </td>
+            </tr>
+            <tr v-if="!filteredPanels.length">
+              <td :colspan="auth.role === 'SUPER_ADMIN' ? 7 : 6" class="equipment-list-table__empty">설비가 없습니다.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-    <BasePagination
-      :current-page="page"
-      :total-pages="totalPages"
-      :total-items="filteredPanels.length"
-      @change="goToPage"
-    />
+      <template #footer>
+        <div class="equipment-list-pagination">
+          <BasePagination
+            :current-page="page"
+            :total-pages="totalPages"
+            :total-items="filteredPanels.length"
+            @change="goToPage"
+          />
+        </div>
+      </template>
+    </BaseCard>
 
     <ConfirmModal v-if="showBulkDeleteConfirm" title="설비 삭제 확인"
       message="선택한 설비를 삭제하시겠습니까? 하위 회로도 함께 비활성화됩니다." danger
       @confirm="confirmBulkDelete" @cancel="showBulkDeleteConfirm=false" />
   </div>
 </template>
+
+<style scoped>
+.equipment-list-page {
+  min-height: 100%;
+}
+
+.equipment-list-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  flex-wrap: wrap;
+}
+
+.equipment-list-toolbar__search,
+.equipment-list-toolbar__status {
+  margin-bottom: 0;
+}
+
+.equipment-list-toolbar__search {
+  width: 220px;
+}
+
+.equipment-list-toolbar__status {
+  width: 140px;
+}
+
+.equipment-list-toolbar__delete {
+  margin-left: auto;
+}
+
+.equipment-list-loading {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-body);
+}
+
+.equipment-list-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.equipment-list-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.equipment-list-table th {
+  padding: var(--space-12) var(--space-8);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  text-align: left;
+  font-size: var(--font-size-caption);
+  font-weight: 700;
+}
+
+.equipment-list-table td {
+  padding: var(--space-12) var(--space-8);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-body);
+}
+
+.equipment-list-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.equipment-list-table__row {
+  cursor: pointer;
+}
+
+.equipment-list-table__row:hover td {
+  background: var(--color-page-bg);
+}
+
+.equipment-list-table__actions {
+  text-align: right;
+}
+
+.equipment-list-table__empty {
+  padding: var(--space-24);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.equipment-list-pagination :deep(.base-pagination) {
+  margin-top: 0;
+}
+
+@media (max-width: 720px) {
+  .equipment-list-toolbar__delete {
+    margin-left: 0;
+  }
+
+  .equipment-list-table {
+    min-width: 680px;
+  }
+}
+</style>
