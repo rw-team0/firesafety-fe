@@ -9,9 +9,6 @@ import AccountEditView from '@/views/AccountEditView.vue'
 import AccountHistoryView from '@/views/AccountHistoryView.vue'
 import PasswordResetRequestView from '@/views/PasswordResetRequestView.vue'
 import PasswordResetConfirmView from '@/views/PasswordResetConfirmView.vue'
-import SiteRegisterView from '@/views/SiteRegisterView.vue'
-import PanelRegisterView from '@/views/PanelRegisterView.vue'
-import CircuitRegisterView from '@/views/CircuitRegisterView.vue'
 import EquipmentListView from '@/views/EquipmentListView.vue'
 import EquipmentDetailView from '@/views/EquipmentDetailView.vue'
 import FacilityManageView from '@/views/FacilityManageView.vue'
@@ -36,9 +33,6 @@ const webRoutes = {
     { path: 'equipment/:panelId', name: 'equipment-detail', component: EquipmentDetailView, meta: { requiredRole: 'GENERAL' } },
     { path: 'statistics', name: 'statistics', component: StatisticsView, meta: { requiredRole: 'GENERAL' } },
     { path: 'settings', name: 'settings', component: PlaceholderView, meta: { requiredRole: 'GENERAL' } },
-    { path: 'settings/sites', name: 'site-register', component: SiteRegisterView, meta: { requiredRole: 'SUPER_ADMIN' } },
-    { path: 'settings/panels', name: 'panel-register', component: PanelRegisterView, meta: { requiredRole: 'ADMIN' } },
-    { path: 'settings/circuits', name: 'circuit-register', component: CircuitRegisterView, meta: { requiredRole: 'ADMIN' } },
     { path: 'settings/facilities', name: 'facility-manage', component: FacilityManageView, meta: { requiredRole: 'ADMIN' } },
     { path: 'settings/facilities/history', name: 'facility-audit-history', component: FacilityAuditHistoryView, meta: { requiredRole: 'SUPER_ADMIN' } },
     { path: 'settings/site-assignment', name: 'site-assignment', component: SiteAssignmentView, meta: { requiredRole: 'ADMIN' } },
