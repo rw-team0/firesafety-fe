@@ -3,11 +3,9 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
 import { createMonitoringSocket } from '../utils/monitoringSocket'
+import ActionResultModal from '../components/ActionResultModal.vue'
 import BaseModal from '../components/common/BaseModal.vue'
 import { useAuthStore } from '../stores/auth'
-import { useUiAlertStore } from '../stores/uiAlert'
-
-const uiAlert = useUiAlertStore()
 
 const route = useRoute()
 const auth = useAuthStore()
@@ -28,6 +26,11 @@ const STATUS_COLOR = { NORMAL: 'var(--color-success)', CAUTION: 'var(--color-war
 
 function formatDateTime(v) {
   return v ? v.replace('T', ' ') : '-'
+}
+
+function formatResultDateTime(date = new Date()) {
+  const pad = (v) => String(v).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
 }
 
 function circuitCardStyle(status) {
@@ -96,6 +99,7 @@ const showEditModal = ref(false)
 const editForm = ref({})
 const editSubmitting = ref(false)
 const editErrorMsg = ref('')
+const editResult = ref(null)
 
 function openEdit() {
   editForm.value = {
@@ -125,8 +129,15 @@ async function saveEdit() {
 
   try {
     await httpRequester.put(`/panels/${panelId}`, editForm.value)
+    const editedPanelName = editForm.value.name
     showEditModal.value = false
-    uiAlert.show('분전반 정보가 수정되었습니다.')
+    editResult.value = {
+      title: '분전반 정보 수정 완료',
+      desc: '분전반 정보와 임계값이 수정되었습니다.',
+      itemName: editedPanelName,
+      time: formatResultDateTime(),
+      actionLabel: '수정 완료',
+    }
     await load()
   } catch (e) {
     editErrorMsg.value = e.response?.data?.resultMessage ?? '저장에 실패했습니다.'
@@ -293,5 +304,15 @@ async function saveEdit() {
         </div>
       </template>
     </BaseModal>
+
+    <ActionResultModal
+      :visible="!!editResult"
+      :title="editResult?.title"
+      :desc="editResult?.desc"
+      :item-name="editResult?.itemName"
+      :time="editResult?.time"
+      :action-label="editResult?.actionLabel"
+      @close="editResult = null"
+    />
   </div>
 </template>
