@@ -1,8 +1,8 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
-import ConfirmModal from '../components/ConfirmModal.vue'
+import MobileModal from '../components/MobileModal.vue'
 
 const route = useRoute()
 
@@ -37,6 +37,17 @@ const detail = ref(null) // PanelDetailRes
 const detailLoading = ref(false)
 const selectedAlert = ref(null)
 const pendingAction = ref(null) // 'confirm' | 'resolve' | null
+const pendingActionInfoRows = computed(() => {
+  const alert = selectedAlert.value
+  if (!alert) return []
+
+  return [
+    { label: '경보명', value: `${TYPE_LABEL[alert.type] ?? alert.type} 경보` },
+    { label: '장비명', value: alert.panelName ?? '-' },
+    { label: '회로', value: alert.circuitNo != null ? `채널 ${alert.circuitNo}` : '-' },
+    { label: '발생 시각', value: alert.triggeredAt?.slice(0, 16).replace('T', ' ') ?? '-' },
+  ]
+})
 
 async function openPanel(panelName, alert) {
   const panelId = panelIdByName.value[panelName]
@@ -157,8 +168,14 @@ onMounted(async () => {
       </div>
     </div>
 
-    <ConfirmModal v-if="pendingAction" title="경보 처리"
+    <MobileModal
+      :visible="!!pendingAction"
+      type="warning"
+      title="경보 처리"
       :message="`이 경보를 ${pendingAction === 'confirm' ? '확인 처리' : '조치 완료'}하시겠습니까?`"
+      :info-rows="pendingActionInfoRows"
+      confirm-text="확인"
+      cancel-text="취소"
       @confirm="runAction" @cancel="pendingAction = null" />
   </div>
 </template>
@@ -183,7 +200,7 @@ onMounted(async () => {
 
 .overlay {
   position: fixed; inset: 0; background: rgba(0, 0, 0, .45);
-  display: flex; align-items: flex-end; z-index: 50; /* ConfirmModal(.modal-overlay z-index:100)이 이 시트보다 위에 뜨게 함 */
+  display: flex; align-items: flex-end; z-index: 50; /* MobileModal이 이 시트보다 위에 뜨게 함 */
 }
 .sheet {
   width: 100%; max-height: 88vh; overflow-y: auto;
