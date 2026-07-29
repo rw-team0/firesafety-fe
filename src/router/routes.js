@@ -23,7 +23,6 @@ import SiteAssignmentView from '@/views/SiteAssignmentView.vue'
 import MobileLoginView from '@/views/MobileLoginView.vue'
 import MobileDashboardView from '@/views/MobileDashboardView.vue'
 import MobileAlertView from '@/views/MobileAlertView.vue'
-import AiAnalysisView from '@/views/AiAnalysisView.vue'
 
 // ── 웹 라우트 ──────────────────────────────
 //여기에 각 프론트엔드 뷰 추가(경로, 이름, 컴포넌트, 권한)
@@ -48,7 +47,6 @@ const webRoutes = {
     { path: 'settings/accounts/:userId', name: 'account-edit', component: AccountEditView, meta: { requiredRole: 'ADMIN' } },
     { path: 'settings/accounts/history', name:'account-history', component: AccountHistoryView, meta:{requiredRole:'SUPER_ADMIN'} },
     { path: 'settings/sites/:siteId', name:'site-edit', component: PlaceholderView, meta:{requiredRole:'SUPER_ADMIN'} },
-    { path: 'aianalysis', name:'ai-analysis', component: AiAnalysisView, meta:{requiredRole:'ADMIN'} },
   ],
 }
 
