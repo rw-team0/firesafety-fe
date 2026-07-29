@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
+import ActionResultModal from '../components/ActionResultModal.vue'
 import { useAuthStore } from '../stores/auth'
 import { useUiAlertStore } from '../stores/uiAlert'
 
@@ -14,6 +15,7 @@ const errorMsg = ref('')
 const sites = ref([])
 const emailChecked = ref(false)
 const emailAvailable = ref(null)
+const createResult = ref(null)
 
 // 최고관리자만 "관리자(현장관리자)" 계정 생성 가능
 const availableRoles = computed(() => auth.role === 'SUPER_ADMIN' ? ['ADMIN','GENERAL'] : ['GENERAL'])
@@ -38,6 +40,10 @@ async function checkEmail() {
   emailChecked.value = true
 }
 
+function accountResultName() {
+  return form.value.name && form.value.email ? `${form.value.name} (${form.value.email})` : form.value.name || form.value.email
+}
+
 async function submit() {
   errorMsg.value = ''
   if (form.value.password !== passwordConfirm.value) {
@@ -53,8 +59,9 @@ async function submit() {
     if (siteId) {
       await httpRequester.post(`/users/${res.data.resultData.userId}/site-assignments`, { siteIds: [siteId] })
     }
-    uiAlert.show('계정이 등록되었습니다.')
-    router.push('/settings/accounts')
+    createResult.value = {
+      itemName: accountResultName(),
+    }
   } catch (e) {
     errorMsg.value = e.response?.data?.resultMessage === 'EMAIL_DUPLICATE'
       ? '이미 사용 중인 이메일입니다.' : '등록에 실패했습니다.'
@@ -62,6 +69,10 @@ async function submit() {
 }
 
 function cancel() {
+  router.push('/settings/accounts')
+}
+
+function goAccountList() {
   router.push('/settings/accounts')
 }
 </script>
@@ -107,5 +118,13 @@ function cancel() {
         <button class="btn" style="min-width:120px;" @click="cancel">취소</button>
       </div>
     </div>
+    <ActionResultModal
+      :visible="!!createResult"
+      title="계정 등록 완료"
+      desc="계정 정보가 등록되었습니다."
+      :item-name="createResult?.itemName"
+      action-label="등록 완료"
+      @close="goAccountList"
+    />
   </div>
 </template>

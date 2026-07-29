@@ -2,13 +2,12 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import httpRequester from '../utils/httpRequester'
+import ActionResultModal from '../components/ActionResultModal.vue'
 import { useAuthStore } from '../stores/auth'
-import { useUiAlertStore } from '../stores/uiAlert'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
-const uiAlert = useUiAlertStore()
 const userId = route.params.userId
 
 const form = ref({ name:'', email:'', phone:'', role:'GENERAL', siteId:'' })
@@ -16,6 +15,7 @@ const targetRole = ref(null)
 const sites = ref([])
 const loading = ref(true)
 const errorMsg = ref('')
+const updateResult = ref(null)
 
 // FR-05-05: 대상이 ADMIN(현장관리자)이면 최고관리자만 수정 가능
 const forbidden = computed(() => targetRole.value === 'ADMIN' && auth.role !== 'SUPER_ADMIN')
@@ -42,6 +42,10 @@ async function load() {
 }
 onMounted(load)
 
+function accountResultName() {
+  return form.value.name && form.value.email ? `${form.value.name} (${form.value.email})` : form.value.name || form.value.email
+}
+
 async function save() {
   if (forbidden.value) return
   try {
@@ -50,14 +54,19 @@ async function save() {
     const { siteId, ...body } = form.value
     await httpRequester.put(`/users/${userId}`, body) // API-005
     await httpRequester.post(`/users/${userId}/site-assignments`, { siteIds: siteId ? [siteId] : [] })
-    uiAlert.show('계정 정보가 수정되었습니다.')
-    router.push('/settings/accounts')
+    updateResult.value = {
+      itemName: accountResultName(),
+    }
   } catch (e) {
     errorMsg.value = e.response?.data?.resultMessage || '수정에 실패했습니다.'
   }
 }
 
 function cancel() {
+  router.push('/settings/accounts')
+}
+
+function goAccountList() {
   router.push('/settings/accounts')
 }
 </script>
@@ -93,5 +102,13 @@ function cancel() {
         </div>
       </fieldset>
     </div>
+    <ActionResultModal
+      :visible="!!updateResult"
+      title="계정 수정 완료"
+      desc="계정 정보가 수정되었습니다."
+      :item-name="updateResult?.itemName"
+      action-label="수정 완료"
+      @close="goAccountList"
+    />
   </div>
 </template>
