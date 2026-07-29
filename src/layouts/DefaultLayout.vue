@@ -145,22 +145,28 @@ function formatDateTime(v) {
     </BaseModal>
 
     <!-- 위험 등급 전환 팝업(프론트가이드 7.5절). 레이아웃에 있어서 어느 화면에 있든 뜬다 -->
-    <div v-if="monitoring.riskPopup" class="modal-overlay" @click.self="monitoring.clearRiskPopup()">
-      <div class="modal-panel">
+    <BaseModal
+      :visible="!!monitoring.riskPopup"
+      title="위험 발생"
+      @close="monitoring.clearRiskPopup()"
+    >
+      <template #header>
         <div class="modal-header danger">
           위험 발생
           <button class="modal-close" aria-label="닫기" @click="monitoring.clearRiskPopup()">×</button>
         </div>
-        <div class="modal-body">
-          <p>{{ monitoring.riskPopup.panelName }}에서 위험 상태가 감지되었습니다.</p>
-          <p>상세보기 시 바로 해당 알림이 확인 처리 됩니다.</p>
-          <div class="modal-actions">
-            <button class="btn btn-primary" @click="goToPanel(monitoring.riskPopup.panelId)">상세보기</button>
-            <button class="btn" @click="monitoring.clearRiskPopup()">닫기</button>
-          </div>
+      </template>
+
+      <p>{{ monitoring.riskPopup?.panelName }}에서 위험 상태가 감지되었습니다.</p>
+      <p>상세보기 시 바로 해당 알림이 확인 처리 됩니다.</p>
+
+      <template #footer>
+        <div class="modal-actions" style="padding:0 18px 18px;">
+          <button class="btn btn-primary" @click="goToPanel(monitoring.riskPopup?.panelId)">상세보기</button>
+          <button class="btn" @click="monitoring.clearRiskPopup()">닫기</button>
         </div>
-      </div>
-    </div>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
